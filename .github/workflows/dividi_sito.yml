@@ -1,10 +1,10 @@
-name: Dividi Sito in Pagine SEO
+name: Sistema Bug Lezioni e Mega Aree
 
 on:
   workflow_dispatch:
 
 jobs:
-  split:
+  fix:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -14,145 +14,99 @@ jobs:
       - name: Installa BeautifulSoup
         run: pip install beautifulsoup4
 
-      - name: Dividi file HTML in moduli
+      - name: Correggi lezioni, Mega Aree e script.js
         run: |
-          cat << 'EOF' > split.py
-          import os
-          import re
+          cat << 'EOF' > fix.py
           import glob
           from bs4 import BeautifulSoup
 
-          # Trova automaticamente il file .html caricato nel repository
-          html_files = glob.glob("**/*.html", recursive=True)
-          if not html_files:
-              raise FileNotFoundError("Nessun file .html trovato nel repository!")
+          # 1. Rimuovi il blocco indice "Dossier I..." da tutte le pagine in lezioni/
+          for path in glob.glob("lezioni/*.html"):
+              with open(path, "r", encoding="utf-8") as f:
+                  soup = BeautifulSoup(f.read(), "html.parser")
+              
+              pane = soup.find("div", class_="lezione-content-pane")
+              if pane:
+                  for child in list(pane.children):
+                      if getattr(child, "get_text", None) and "Dossier I (Antichità)" in child.get_text():
+                          child.decompose()
+              
+              with open(path, "w", encoding="utf-8") as f:
+                  f.write(str(soup))
 
-          file_sorgente = max(html_files, key=os.path.getsize)
-          print(f"Trovato file sorgente: {file_sorgente}")
+          # 2. Correggi il collegamento della Macroarea 1 (Economia) in index.html
+          with open("index.html", "r", encoding="utf-8") as f:
+              index_html = f.read()
 
-          with open(file_sorgente, "r", encoding="utf-8") as f:
-              html = f.read()
+          index_html = index_html.replace(
+              "onclick=\"showView('viewProgramma')\"",
+              "onclick=\"showView('view-home')\""
+          )
 
-          soup = BeautifulSoup(html, "html.parser")
-
-          # 1. Estrai CSS in style.css
-          style_tag = soup.find("style")
-          if style_tag:
-              with open("style.css", "w", encoding="utf-8") as f:
-                  f.write(style_tag.string.strip())
-              new_link = soup.new_tag("link", rel="stylesheet", href="style.css")
-              style_tag.replace_with(new_link)
-
-          # 2. Estrai JS principale in script.js
-          scripts = soup.find_all("script")
-          for s in scripts:
-              if s.string and "quizDatabase" in s.string:
-                  js_code = s.string.strip()
-                  pos = js_code.find("// 1. Funzione per cambiare epoca dai bottoni principali")
-                  if pos != -1:
-                      js_code = js_code[:pos].strip()
-                  old_open = re.search(r"function openLezioneDetail\(lezioneId\)\s*\{.*?\n    \}", js_code, re.DOTALL)
-                  if old_open:
-                      new_open = """function openLezioneDetail(lezioneId) {
-                window.location.href = 'lezioni/' + lezioneId + '.html';
-              }"""
-                      js_code = js_code.replace(old_open.group(0), new_open)
-                  with open("script.js", "w", encoding="utf-8") as f:
-                      f.write(js_code)
-                  new_script = soup.new_tag("script", src="script.js")
-                  s.replace_with(new_script)
-
-          # 3. Estrai ogni lezione in lezioni/<id>.html
-          os.makedirs("lezioni", exist_ok=True)
-          panes = soup.find_all("div", class_="lezione-content-pane")
-          sitemap_urls = ["https://historia-chronos.pages.dev/"]
-
-          for pane in panes:
-              lez_id = pane.get("id", "lezione")
-              title_el = pane.find(["h1", "h2"])
-              lez_title = title_el.get_text(strip=True) if title_el else f"Lezione {lez_id}"
-              desc_el = pane.find("p")
-              lez_desc = desc_el.get_text(strip=True)[:155] if desc_el else lez_title
-
-              pane["style"] = "display:block;"
-              page_html = f"""<!DOCTYPE html>
-          <html lang="it">
-          <head>
-            <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>{lez_title} | Historia Chronos</title>
-            <meta name="description" content="{lez_desc}" />
-            <link rel="preconnect" href="https://fonts.googleapis.com">
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-            <script src="https://cdn.tailwindcss.com"></script>
-            <script>
-              tailwind.config = {{
-                theme: {{
-                  extend: {{
-                    colors: {{
-                      darkbg: '#121418', surface: '#1a1d24', cardbg: '#222631',
-                      goldprimary: '#d4af37', goldlight: '#f3e5ab', textmain: '#f5f6f8',
-                      textmuted: '#9ba1a6', bordergold: 'rgba(212, 175, 55, 0.3)'
-                    }},
-                    fontFamily: {{ cinzel: ['Cinzel', 'serif'], inter: ['Inter', 'sans-serif'] }}
-                  }}
-                }}
-              }}
-            </script>
-            <link rel="stylesheet" href="../style.css" />
-          </head>
-          <body>
-            <header class="main-header">
-              <div class="header-container">
-                <a href="../index.html" class="brand-logo" style="text-decoration:none; color:inherit;">
-                  <span class="logo-icon">🏛️</span>
-                  <span class="logo-text">Historia <span class="gold-text">Chronos</span></span>
-                </a>
-                <nav class="desktop-nav">
-                  <a href="../index.html" class="nav-link">← Torna alle Lezioni</a>
-                </nav>
-              </div>
-            </header>
-            <main class="main-container" style="padding-top: 110px;">
-              <button class="back-to-grid-btn" onclick="window.location.href='../index.html'">← Torna all'Indice delle Lezioni</button>
-              {str(pane)}
-            </main>
-            <script src="../script.js"></script>
-          </body>
-          </html>"""
-              with open(f"lezioni/{lez_id}.html", "w", encoding="utf-8") as f:
-                  f.write(page_html)
-              sitemap_urls.append(f"https://historia-chronos.pages.dev/lezioni/{lez_id}.html")
-              pane.decompose()
-
-          # 4. Salva sempre la home page come index.html
           with open("index.html", "w", encoding="utf-8") as f:
-              f.write(str(soup))
+              f.write(index_html)
 
-          if file_sorgente != "index.html" and os.path.exists(file_sorgente):
-              os.remove(file_sorgente)
+          # 3. Aggiorna showView e i pulsanti principali in script.js per nascondere correttamente le viste
+          with open("script.js", "r", encoding="utf-8") as f:
+              js_code = f.read()
 
-          # 5. Genera sitemap.xml e robots.txt per Google SEO
-          sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-          for u in sitemap_urls:
-              sitemap_xml += f"  <url><loc>{u}</loc></url>\n"
-          sitemap_xml += "</urlset>\n"
-          with open("sitemap.xml", "w", encoding="utf-8") as f:
-              f.write(sitemap_xml)
+          old_show_view = """function showView(viewId) {
+                document.querySelectorAll('.view-screen').forEach(el => {
+                  el.classList.add('hidden');
+                  el.classList.remove('flex');
+                });
+                const target = document.getElementById(viewId);
+                if (target) {
+                  target.classList.remove('hidden');
+                  target.classList.add('flex');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }"""
 
-          with open("robots.txt", "w", encoding="utf-8") as f:
-              f.write("User-agent: *\nAllow: /\nSitemap: https://historia-chronos.pages.dev/sitemap.xml\n")
+          new_show_view = """function showView(viewId) {
+                const viewProg = document.getElementById('viewProgramma');
+                const viewMega = document.getElementById('viewMegaAree');
+                if (viewProg) viewProg.classList.remove('active');
+                if (viewMega) viewMega.classList.remove('active');
 
-          print(f"Fatto! Create {len(panes)} pagine lezione separate.")
+                document.querySelectorAll('.view-screen').forEach(el => {
+                  el.classList.add('hidden');
+                  el.classList.remove('flex');
+                });
+                const target = document.getElementById(viewId);
+                if (target) {
+                  target.classList.remove('hidden');
+                  target.classList.add('flex');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }"""
+
+          if "function showView(viewId)" in js_code:
+              import re
+              js_code = re.sub(r"function showView\(viewId\)\s*\{.*?\n\s*\}", new_show_view, js_code, flags=re.DOTALL)
+
+          # Assicura che anche cliccando su "Programma Scolastico" o "Mega Aree Tematiche" in alto si chiudano eventuali view-screen aperte
+          js_code = js_code.replace(
+              "viewMegaAree.classList.add('active');",
+              "document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });\n          viewMegaAree.classList.add('active');"
+          )
+          js_code = js_code.replace(
+              "viewProgramma.classList.add('active');",
+              "document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });\n          viewProgramma.classList.add('active');"
+          )
+
+          with open("script.js", "w", encoding="utf-8") as f:
+              f.write(js_code)
+
+          print("Tutti e tre i bug sono stati sistemati con successo!")
           EOF
-          python split.py
-          rm split.py
+          python fix.py
+          rm fix.py
 
-      - name: Salva i file divisi su GitHub
+      - name: Salva le correzioni su GitHub
         run: |
           git config user.name "Historia Chronos Bot"
           git config user.email "bot@historiachronos.local"
           git add .
-          git commit -m "Separazione automatica lezioni, CSS, JS e Sitemap SEO"
+          git commit -m "Fix indice lezioni, link Macroarea Economia e navigazione view-screen"
           git push
