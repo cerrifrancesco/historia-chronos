@@ -122,58 +122,68 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
-      const itemContainer = document.getElementById(itemId) || btnElement.parentElement.parentElement;
-      const feedbackBox = document.getElementById('feedback-' + itemId) || itemContainer.querySelector('.quiz-feedback');
-      const allBtns = itemContainer.querySelectorAll('.quiz-opt-btn');
-      
-      const data = quizDatabase[itemId] || { 
-        correctOpt: 'B', 
-        explanation: 'Risposta registrata correttamente nel sistema Historia Chronos.' 
-      };
+  const itemContainer = document.getElementById(itemId) || btnElement.closest('div[id]') || btnElement.parentElement.parentElement;
+  const feedbackBox = document.getElementById('feedback-' + itemId) || itemContainer.querySelector('.quiz-feedback');
+  const allBtns = itemContainer.querySelectorAll('.quiz-opt-btn');
+  
+  const data = quizDatabase[itemId] || { 
+    correctOpt: 'B', 
+    explanation: 'Risposta registrata correttamente nel sistema Historia Chronos.' 
+  };
 
-      allBtns.forEach(btn => btn.style.pointerEvents = 'none');
-      
-      if (feedbackBox) {
-        feedbackBox.style.display = 'block';
+  allBtns.forEach(btn => btn.style.pointerEvents = 'none');
+  
+  if (feedbackBox) {
+    feedbackBox.style.display = 'block';
 
-        if (isCorrect) {
-          btnElement.style.backgroundColor = 'rgba(34, 197, 94, 0.3)';
-          btnElement.style.borderColor = '#22c55e';
-          feedbackBox.className = 'quiz-feedback correct';
-          feedbackBox.innerHTML = `<strong>CORRETTO!!! 🎉</strong><br>${data.explanation}`;
-        } else {
-          btnElement.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
-          btnElement.style.borderColor = '#ef4444';
-          feedbackBox.className = 'quiz-feedback wrong';
-          feedbackBox.innerHTML = `<strong>SBAGLIATO! ❌</strong><br><strong>La risposta corretta era la ${data.correctOpt}.</strong><br><em>Spiegazione:</em> ${data.explanation}`;
-        }
-      }
-
-      const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + lezioneNum.replace('.', '-');
-      const resetBtn = document.getElementById(resetBtnId);
-      if (resetBtn) resetBtn.style.display = 'inline-block';
+    if (isCorrect) {
+      btnElement.style.backgroundColor = 'rgba(34, 197, 94, 0.3)';
+      btnElement.style.borderColor = '#22c55e';
+      feedbackBox.className = 'quiz-feedback correct';
+      feedbackBox.innerHTML = `<strong>CORRETTO!!! 🎉</strong><br>${data.explanation}`;
+    } else {
+      btnElement.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+      btnElement.style.borderColor = '#ef4444';
+      feedbackBox.className = 'quiz-feedback wrong';
+      feedbackBox.innerHTML = `<strong>SBAGLIATO! ❌</strong><br><strong>La risposta corretta era la ${data.correctOpt}.</strong><br><em>Spiegazione:</em> ${data.explanation}`;
     }
+  }
 
-    function resetQuiz(containerId, lezioneNum) {
-      const container = document.getElementById(containerId);
-      const allBtns = container.querySelectorAll('.quiz-opt-btn');
-      const allFeedbacks = container.querySelectorAll('.quiz-feedback');
+  // Trova il pulsante "Rifai il Quiz" sia tramite ID che dentro il contenitore del quiz
+  const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + String(lezioneNum || '').replace('.', '-');
+  const quizBox = itemContainer.closest('.lezione-section-box') || itemContainer.parentElement;
+  const resetBtn = document.getElementById(resetBtnId) || (quizBox ? quizBox.querySelector('button[onclick*="resetQuiz"]') : null);
+  if (resetBtn) resetBtn.style.display = 'inline-block';
+}
 
-      allBtns.forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.backgroundColor = 'var(--bg-card)';
-        btn.style.borderColor = 'var(--border-gold)';
-      });
+function resetQuiz(containerId, lezioneNum, btnElement) {
+  let container = document.getElementById(containerId);
+  if (!container && btnElement) {
+    container = btnElement.closest('.lezione-section-box') || btnElement.parentElement;
+  }
+  if (!container && typeof event !== 'undefined' && event.target) {
+    container = event.target.closest('.lezione-section-box') || event.target.parentElement;
+  }
+  if (!container) return;
 
-      allFeedbacks.forEach(fb => {
-        fb.style.display = 'none';
-        fb.innerHTML = '';
-      });
+  const allBtns = container.querySelectorAll('.quiz-opt-btn');
+  const allFeedbacks = container.querySelectorAll('.quiz-feedback');
 
-      const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + lezioneNum.replace('.', '-');
-      const resetBtn = document.getElementById(resetBtnId);
-      if (resetBtn) resetBtn.style.display = 'none';
-    }
+  allBtns.forEach(btn => {
+    btn.style.pointerEvents = 'auto';
+    btn.style.backgroundColor = 'var(--bg-card)';
+    btn.style.borderColor = 'var(--border-gold)';
+  });
+
+  allFeedbacks.forEach(fb => {
+    fb.style.display = 'none';
+    fb.innerHTML = '';
+  });
+
+  const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + String(lezioneNum || '').replace('.', '-');
+  const resetBtn = document.getElementById(resetBtnId) || container.querySelector('button[onclick*="resetQuiz"]');
+  if (resetBtn) resetBtn.style.display = 'none';
+}
     let epocaAttivaId = 'grid-antica';
 
     function switchEpoca(epoca, btn) {
