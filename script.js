@@ -322,31 +322,24 @@ document.addEventListener('DOMContentLoaded', () => {
       chatBody.scrollTop = chatBody.scrollHeight;
     }
 
-    function showView(viewId) {
-      const viewProg = document.getElementById('viewProgramma');
-      const viewMega = document.getElementById('viewMegaAree');
-      if (viewProg) viewProg.classList.remove('active');
-      if (viewMega) viewMega.classList.remove('active');
+function showView(viewId) {
+  const viewProg = document.getElementById('viewProgramma');
+  const viewMega = document.getElementById('viewMegaAree');
+  if (viewProg) viewProg.classList.remove('active');
+  if (viewMega) viewMega.classList.remove('active');
 
-      document.querySelectorAll('.view-screen').forEach(el => {
-        el.classList.add('hidden');
-        el.classList.remove('flex');
-      });
-      const target = document.getElementById(viewId);
-      if (target) {
-        target.classList.remove('hidden');
-        target.classList.add('flex');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    });
-      const target = document.getElementById(viewId);
-      if (target) {
-        target.classList.remove('hidden');
-        target.classList.add('flex');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
+  document.querySelectorAll('.view-screen').forEach(el => {
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+  });
+  const target = document.getElementById(viewId);
+  if (target) {
+    target.classList.remove('hidden');
+    target.classList.add('flex');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
 
-    function showHome() {
-      showView('view-home');
-    }
+function showHome() {
+  showView('view-home');
+}
