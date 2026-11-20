@@ -1,0 +1,148 @@
+name: Dividi Sito in Pagine SEO
+
+on:
+  workflow_dispatch:
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installa BeautifulSoup
+        run: pip install beautifulsoup4
+
+      - name: Dividi index.html in moduli
+        run: |
+          cat << 'EOF' > split.py
+          import os
+          import re
+          from bs4 import BeautifulSoup
+
+          with open("index.html", "r", encoding="utf-8") as f:
+              html = f.read()
+
+          soup = BeautifulSoup(html, "html.parser")
+
+          # 1. Estrai CSS in style.css
+          style_tag = soup.find("style")
+          if style_tag:
+              with open("style.css", "w", encoding="utf-8") as f:
+                  f.write(style_tag.string.strip())
+              new_link = soup.new_tag("link", rel="stylesheet", href="style.css")
+              style_tag.replace_with(new_link)
+
+          # 2. Estrai JS principale in script.js
+          scripts = soup.find_all("script")
+          for s in scripts:
+              if s.string and "quizDatabase" in s.string:
+                  js_code = s.string.strip()
+                  # Rimuove eventuale duplicato finale di switchEpoca
+                  pos = js_code.find("// 1. Funzione per cambiare epoca dai bottoni principali")
+                  if pos != -1:
+                      js_code = js_code[:pos].strip()
+                  # Aggiorna openLezioneDetail per aprire il file separato
+                  old_open = re.search(r"function openLezioneDetail\(lezioneId\)\s*\{.*?\n    \}", js_code, re.DOTALL)
+                  if old_open:
+                      new_open = """function openLezioneDetail(lezioneId) {
+                window.location.href = 'lezioni/' + lezioneId + '.html';
+              }"""
+                      js_code = js_code.replace(old_open.group(0), new_open)
+                  with open("script.js", "w", encoding="utf-8") as f:
+                      f.write(js_code)
+                  new_script = soup.new_tag("script", src="script.js")
+                  s.replace_with(new_script)
+
+          # 3. Estrai ogni lezione in lezioni/<id>.html
+          os.makedirs("lezioni", exist_ok=True)
+          panes = soup.find_all("div", class_="lezione-content-pane")
+          sitemap_urls = ["https://historia-chronos.pages.dev/"]
+
+          for pane in panes:
+              lez_id = pane.get("id", "lezione")
+              title_el = pane.find(["h1", "h2"])
+              lez_title = title_el.get_text(strip=True) if title_el else f"Lezione {lez_id}"
+              desc_el = pane.find("p")
+              lez_desc = desc_el.get_text(strip=True)[:155] if desc_el else lez_title
+
+              pane["style"] = "display:block;"
+              page_html = f"""<!DOCTYPE html>
+          <html lang="it">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>{lez_title} | Historia Chronos</title>
+            <meta name="description" content="{lez_desc}" />
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script>
+              tailwind.config = {{
+                theme: {{
+                  extend: {{
+                    colors: {{
+                      darkbg: '#121418', surface: '#1a1d24', cardbg: '#222631',
+                      goldprimary: '#d4af37', goldlight: '#f3e5ab', textmain: '#f5f6f8',
+                      textmuted: '#9ba1a6', bordergold: 'rgba(212, 175, 55, 0.3)'
+                    }},
+                    fontFamily: {{ cinzel: ['Cinzel', 'serif'], inter: ['Inter', 'sans-serif'] }}
+                  }}
+                }}
+              }}
+            </script>
+            <link rel="stylesheet" href="../style.css" />
+          </head>
+          <body>
+            <header class="main-header">
+              <div class="header-container">
+                <a href="../index.html" class="brand-logo" style="text-decoration:none; color:inherit;">
+                  <span class="logo-icon">🏛️</span>
+                  <span class="logo-text">Historia <span class="gold-text">Chronos</span></span>
+                </a>
+                <nav class="desktop-nav">
+                  <a href="../index.html" class="nav-link">← Torna alle Lezioni</a>
+                </nav>
+              </div>
+            </header>
+            <main class="main-container" style="padding-top: 110px;">
+              <button class="back-to-grid-btn" onclick="window.location.href='../index.html'">← Torna all'Indice delle Lezioni</button>
+              {str(pane)}
+            </main>
+            <script src="../script.js"></script>
+          </body>
+          </html>"""
+              with open(f"lezioni/{lez_id}.html", "w", encoding="utf-8") as f:
+                  f.write(page_html)
+              sitemap_urls.append(f"https://historia-chronos.pages.dev/lezioni/{lez_id}.html")
+              pane.decompose()
+
+          # 4. Salva il nuovo index.html leggero
+          with open("index.html", "w", encoding="utf-8") as f:
+              f.write(str(soup))
+
+          # 5. Genera sitemap.xml e robots.txt per Google SEO
+          sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+          for u in sitemap_urls:
+              sitemap_xml += f"  <url><loc>{u}</loc></url>\n"
+          sitemap_xml += "</urlset>\n"
+          with open("sitemap.xml", "w", encoding="utf-8") as f:
+              f.write(sitemap_xml)
+
+          with open("robots.txt", "w", encoding="utf-8") as f:
+              f.write("User-agent: *\nAllow: /\nSitemap: https://historia-chronos.pages.dev/sitemap.xml\n")
+
+          print(f"Fatto! Create {len(panes)} pagine lezione separate.")
+          EOF
+          python split.py
+          rm split.py
+
+      - name: Salva i file divisi su GitHub
+        run: |
+          git config user.name "Historia Chronos Bot"
+          git config user.email "bot@historiachronos.local"
+          git add .
+          git commit -m "Separazione automatica lezioni, CSS, JS e Sitemap SEO"
+          git push
