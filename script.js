@@ -30,12 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btnMegaAree.addEventListener('click', () => {
           btnMegaAree.classList.add('active');
           btnProgramma.classList.remove('active');
+          document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
           viewMegaAree.classList.add('active');
           viewProgramma.classList.remove('active');
         });
         btnProgramma.addEventListener('click', () => {
           btnProgramma.classList.add('active');
           btnMegaAree.classList.remove('active');
+          document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
           viewProgramma.classList.add('active');
           viewMegaAree.classList.remove('active');
         });
@@ -321,10 +323,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showView(viewId) {
+      const viewProg = document.getElementById('viewProgramma');
+      const viewMega = document.getElementById('viewMegaAree');
+      if (viewProg) viewProg.classList.remove('active');
+      if (viewMega) viewMega.classList.remove('active');
+
       document.querySelectorAll('.view-screen').forEach(el => {
         el.classList.add('hidden');
         el.classList.remove('flex');
       });
+      const target = document.getElementById(viewId);
+      if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('flex');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
       const target = document.getElementById(viewId);
       if (target) {
         target.classList.remove('hidden');
