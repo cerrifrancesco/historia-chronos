@@ -1,45 +1,39 @@
-name: Aggiungi Analytics e SEO
+name: Verifica Google Search Console
 
 on:
   workflow_dispatch:
 
 jobs:
-  analytics:
+  google-verify:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inserisci Cloudflare Web Analytics in tutte le pagine
+      - name: Aggiungi meta-tag Google a index.html
         run: |
-          cat << 'EOF' > add_analytics.py
-          import glob
+          cat << 'EOF' > add_meta.py
+          meta_tag = '<meta name="google-site-verification" content="Riyzn5lgqR5eow9Ya-qod1_b-sGdqQlLwo_6ZfkKkvA" />'
 
-          snippet = """<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b58b7e4bc1f94744a6c07990317482ba"}'></script><!-- End Cloudflare Web Analytics -->"""
+          with open("index.html", "r", encoding="utf-8") as f:
+              html = f.read()
 
-          files = ["index.html"] + glob.glob("lezioni/*.html")
-          count = 0
-
-          for path in files:
-              with open(path, "r", encoding="utf-8") as f:
-                  html = f.read()
-
-              if "b58b7e4bc1f94744a6c07990317482ba" not in html and "</body>" in html:
-                  html = html.replace("</body>", f"{snippet}\n</body>")
-                  with open(path, "w", encoding="utf-8") as f:
-                      f.write(html)
-                  count += 1
-
-          print(f"Cloudflare Web Analytics aggiunto a {count} pagine!")
+          if "Riyzn5lgqR5eow9Ya-qod1_b-sGdqQlLwo_6ZfkKkvA" not in html and "</head>" in html:
+              html = html.replace("</head>", f"  {meta_tag}\n</head>")
+              with open("index.html", "w", encoding="utf-8") as f:
+                  f.write(html)
+              print("Meta-tag Google inserito con successo!")
+          else:
+              print("Meta-tag già presente.")
           EOF
-          python add_analytics.py
-          rm add_analytics.py
+          python add_meta.py
+          rm add_meta.py
 
       - name: Salva su GitHub
         run: |
           git config user.name "Historia Chronos Bot"
           git config user.email "bot@historiachronos.local"
-          git add .
-          git commit -m "Attivato Cloudflare Web Analytics su home e lezioni"
+          git add index.html
+          git commit -m "Aggiunto meta-tag Google Search Console"
           git push
