@@ -1,39 +1,58 @@
-name: Verifica Google Search Console
+name: Genera Sitemap e Robots SEO
 
 on:
   workflow_dispatch:
 
 jobs:
-  google-verify:
+  seo-files:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Aggiungi meta-tag Google a index.html
+      - name: Crea sitemap.xml e robots.txt aggiornati
         run: |
-          cat << 'EOF' > add_meta.py
-          meta_tag = '<meta name="google-site-verification" content="Riyzn5lgqR5eow9Ya-qod1_b-sGdqQlLwo_6ZfkKkvA" />'
+          cat << 'EOF' > build_seo.py
+          import glob
+          from datetime import date
 
-          with open("index.html", "r", encoding="utf-8") as f:
-              html = f.read()
+          base_url = "https://historia-chronos.pages.dev"
+          today = date.today().isoformat()
 
-          if "Riyzn5lgqR5eow9Ya-qod1_b-sGdqQlLwo_6ZfkKkvA" not in html and "</head>" in html:
-              html = html.replace("</head>", f"  {meta_tag}\n</head>")
-              with open("index.html", "w", encoding="utf-8") as f:
-                  f.write(html)
-              print("Meta-tag Google inserito con successo!")
-          else:
-              print("Meta-tag già presente.")
+          urls = [f"{base_url}/"]
+          for path in sorted(glob.glob("lezioni/*.html")):
+              urls.append(f"{base_url}/{path}")
+
+          sitemap_lines = [
+              '<?xml version="1.0" encoding="UTF-8"?>',
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+          ]
+          for u in urls:
+              priority = "1.0" if u == f"{base_url}/" else "0.8"
+              sitemap_lines.append("  <url>")
+              sitemap_lines.append(f"    <loc>{u}</loc>")
+              sitemap_lines.append(f"    <lastmod>{today}</lastmod>")
+              sitemap_lines.append(f"    <priority>{priority}</priority>")
+              sitemap_lines.append("  </url>")
+          sitemap_lines.append("</urlset>")
+
+          with open("sitemap.xml", "w", encoding="utf-8") as f:
+              f.write("\n".join(sitemap_lines) + "\n")
+
+          robots_txt = f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml\n"
+          with open("robots.txt", "w", encoding="utf-8") as f:
+              f.write(robots_txt)
+
+          print(f"Generata sitemap.xml con {len(urls)} URL e robots.txt!")
           EOF
-          python add_meta.py
-          rm add_meta.py
+          python build_seo.py
+          rm build_seo.py
 
       - name: Salva su GitHub
         run: |
           git config user.name "Historia Chronos Bot"
           git config user.email "bot@historiachronos.local"
-          git add index.html
-          git commit -m "Aggiunto meta-tag Google Search Console"
+          git add sitemap.xml robots.txt
+          git commit -m "Generati sitemap.xml e robots.txt per Cloudflare Pages"
           git push
