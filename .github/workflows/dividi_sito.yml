@@ -1,57 +1,101 @@
-name: Ripristina JS e Pulisci Lezioni
+name: Ripara Quiz su Tutto il Sito
 
 on:
   workflow_dispatch:
 
 jobs:
-  repair:
+  fix-quiz:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Ripara script.js e verifica sintassi
+      - name: Aggiorna logica quiz in script.js
         run: |
-          cat << 'EOF' > repair.py
+          cat << 'EOF' > fix_quiz.py
+          import re
+
           with open("script.js", "r", encoding="utf-8") as f:
               js = f.read()
 
-          # Taglia da function showView in poi e riscrive la parte finale in modo pulito e valido
-          idx = js.find("function showView(")
-          if idx != -1:
-              js = js[:idx].rstrip() + """
+          new_quiz_logic = """function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
+            const itemContainer = document.getElementById(itemId) || btnElement.closest('div[id]') || btnElement.parentElement.parentElement;
+            const feedbackBox = document.getElementById('feedback-' + itemId) || itemContainer.querySelector('.quiz-feedback');
+            const allBtns = itemContainer.querySelectorAll('.quiz-opt-btn');
+            
+            const data = quizDatabase[itemId] || { 
+              correctOpt: 'B', 
+              explanation: 'Risposta registrata correttamente nel sistema Historia Chronos.' 
+            };
 
-          function showView(viewId) {
-            const viewProg = document.getElementById('viewProgramma');
-            const viewMega = document.getElementById('viewMegaAree');
-            if (viewProg) viewProg.classList.remove('active');
-            if (viewMega) viewMega.classList.remove('active');
+            allBtns.forEach(btn => btn.style.pointerEvents = 'none');
+            
+            if (feedbackBox) {
+              feedbackBox.style.display = 'block';
 
-            document.querySelectorAll('.view-screen').forEach(el => {
-              el.classList.add('hidden');
-              el.classList.remove('flex');
-            });
-            const target = document.getElementById(viewId);
-            if (target) {
-              target.classList.remove('hidden');
-              target.classList.add('flex');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              if (isCorrect) {
+                btnElement.style.backgroundColor = 'rgba(34, 197, 94, 0.3)';
+                btnElement.style.borderColor = '#22c55e';
+                feedbackBox.className = 'quiz-feedback correct';
+                feedbackBox.innerHTML = `<strong>CORRETTO!!! 🎉</strong><br>${data.explanation}`;
+              } else {
+                btnElement.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+                btnElement.style.borderColor = '#ef4444';
+                feedbackBox.className = 'quiz-feedback wrong';
+                feedbackBox.innerHTML = `<strong>SBAGLIATO! ❌</strong><br><strong>La risposta corretta era la ${data.correctOpt}.</strong><br><em>Spiegazione:</em> ${data.explanation}`;
+              }
             }
+
+            // Trova il pulsante "Rifai il Quiz" sia tramite ID che dentro il contenitore del quiz
+            const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + String(lezioneNum || '').replace('.', '-');
+            const quizBox = itemContainer.closest('.lezione-section-box') || itemContainer.parentElement;
+            const resetBtn = document.getElementById(resetBtnId) || (quizBox ? quizBox.querySelector('button[onclick*="resetQuiz"]') : null);
+            if (resetBtn) resetBtn.style.display = 'inline-block';
           }
 
-          function showHome() {
-            showView('view-home');
-          }
-          """
+          function resetQuiz(containerId, lezioneNum, btnElement) {
+            let container = document.getElementById(containerId);
+            if (!container && btnElement) {
+              container = btnElement.closest('.lezione-section-box') || btnElement.parentElement;
+            }
+            if (!container && typeof event !== 'undefined' && event.target) {
+              container = event.target.closest('.lezione-section-box') || event.target.parentElement;
+            }
+            if (!container) return;
+
+            const allBtns = container.querySelectorAll('.quiz-opt-btn');
+            const allFeedbacks = container.querySelectorAll('.quiz-feedback');
+
+            allBtns.forEach(btn => {
+              btn.style.pointerEvents = 'auto';
+              btn.style.backgroundColor = 'var(--bg-card)';
+              btn.style.borderColor = 'var(--border-gold)';
+            });
+
+            allFeedbacks.forEach(fb => {
+              fb.style.display = 'none';
+              fb.innerHTML = '';
+            });
+
+            const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + String(lezioneNum || '').replace('.', '-');
+            const resetBtn = document.getElementById(resetBtnId) || container.querySelector('button[onclick*="resetQuiz"]');
+            if (resetBtn) resetBtn.style.display = 'none';
+          }"""
+
+          pattern = re.compile(r"function checkAnswer\(.*?function resetQuiz\(.*?\n    \}", re.DOTALL)
+          if pattern.search(js):
+              js = pattern.sub(new_quiz_logic, js)
+          else:
+              raise RuntimeError("Blocco checkAnswer/resetQuiz non trovato in script.js")
 
           with open("script.js", "w", encoding="utf-8") as f:
               f.write(js)
 
-          print("script.js riparato con successo!")
+          print("Logica quiz universalizzata con successo!")
           EOF
-          python repair.py
-          rm repair.py
+          python fix_quiz.py
+          rm fix_quiz.py
           node --check script.js
 
       - name: Salva su GitHub
@@ -59,5 +103,5 @@ jobs:
           git config user.name "Historia Chronos Bot"
           git config user.email "bot@historiachronos.local"
           git add script.js
-          git commit -m "Fix sintassi JavaScript e sblocco pulsanti"
+          git commit -m "Fix universale pulsante Rifai il Quiz su lezioni e Mega Aree"
           git push
