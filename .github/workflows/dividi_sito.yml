@@ -1,112 +1,63 @@
-name: Sistema Bug Lezioni e Mega Aree
+name: Ripristina JS e Pulisci Lezioni
 
 on:
   workflow_dispatch:
 
 jobs:
-  fix:
+  repair:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Installa BeautifulSoup
-        run: pip install beautifulsoup4
-
-      - name: Correggi lezioni, Mega Aree e script.js
+      - name: Ripara script.js e verifica sintassi
         run: |
-          cat << 'EOF' > fix.py
-          import glob
-          from bs4 import BeautifulSoup
-
-          # 1. Rimuovi il blocco indice "Dossier I..." da tutte le pagine in lezioni/
-          for path in glob.glob("lezioni/*.html"):
-              with open(path, "r", encoding="utf-8") as f:
-                  soup = BeautifulSoup(f.read(), "html.parser")
-              
-              pane = soup.find("div", class_="lezione-content-pane")
-              if pane:
-                  for child in list(pane.children):
-                      if getattr(child, "get_text", None) and "Dossier I (Antichità)" in child.get_text():
-                          child.decompose()
-              
-              with open(path, "w", encoding="utf-8") as f:
-                  f.write(str(soup))
-
-          # 2. Correggi il collegamento della Macroarea 1 (Economia) in index.html
-          with open("index.html", "r", encoding="utf-8") as f:
-              index_html = f.read()
-
-          index_html = index_html.replace(
-              "onclick=\"showView('viewProgramma')\"",
-              "onclick=\"showView('view-home')\""
-          )
-
-          with open("index.html", "w", encoding="utf-8") as f:
-              f.write(index_html)
-
-          # 3. Aggiorna showView e i pulsanti principali in script.js per nascondere correttamente le viste
+          cat << 'EOF' > repair.py
           with open("script.js", "r", encoding="utf-8") as f:
-              js_code = f.read()
+              js = f.read()
 
-          old_show_view = """function showView(viewId) {
-                document.querySelectorAll('.view-screen').forEach(el => {
-                  el.classList.add('hidden');
-                  el.classList.remove('flex');
-                });
-                const target = document.getElementById(viewId);
-                if (target) {
-                  target.classList.remove('hidden');
-                  target.classList.add('flex');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }"""
+          # Taglia da function showView in poi e riscrive la parte finale in modo pulito e valido
+          idx = js.find("function showView(")
+          if idx != -1:
+              js = js[:idx].rstrip() + """
 
-          new_show_view = """function showView(viewId) {
-                const viewProg = document.getElementById('viewProgramma');
-                const viewMega = document.getElementById('viewMegaAree');
-                if (viewProg) viewProg.classList.remove('active');
-                if (viewMega) viewMega.classList.remove('active');
+          function showView(viewId) {
+            const viewProg = document.getElementById('viewProgramma');
+            const viewMega = document.getElementById('viewMegaAree');
+            if (viewProg) viewProg.classList.remove('active');
+            if (viewMega) viewMega.classList.remove('active');
 
-                document.querySelectorAll('.view-screen').forEach(el => {
-                  el.classList.add('hidden');
-                  el.classList.remove('flex');
-                });
-                const target = document.getElementById(viewId);
-                if (target) {
-                  target.classList.remove('hidden');
-                  target.classList.add('flex');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }"""
+            document.querySelectorAll('.view-screen').forEach(el => {
+              el.classList.add('hidden');
+              el.classList.remove('flex');
+            });
+            const target = document.getElementById(viewId);
+            if (target) {
+              target.classList.remove('hidden');
+              target.classList.add('flex');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }
 
-          if "function showView(viewId)" in js_code:
-              import re
-              js_code = re.sub(r"function showView\(viewId\)\s*\{.*?\n\s*\}", new_show_view, js_code, flags=re.DOTALL)
-
-          # Assicura che anche cliccando su "Programma Scolastico" o "Mega Aree Tematiche" in alto si chiudano eventuali view-screen aperte
-          js_code = js_code.replace(
-              "viewMegaAree.classList.add('active');",
-              "document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });\n          viewMegaAree.classList.add('active');"
-          )
-          js_code = js_code.replace(
-              "viewProgramma.classList.add('active');",
-              "document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });\n          viewProgramma.classList.add('active');"
-          )
+          function showHome() {
+            showView('view-home');
+          }
+          """
 
           with open("script.js", "w", encoding="utf-8") as f:
-              f.write(js_code)
+              f.write(js)
 
-          print("Tutti e tre i bug sono stati sistemati con successo!")
+          print("script.js riparato con successo!")
           EOF
-          python fix.py
-          rm fix.py
+          python repair.py
+          rm repair.py
+          node --check script.js
 
-      - name: Salva le correzioni su GitHub
+      - name: Salva su GitHub
         run: |
           git config user.name "Historia Chronos Bot"
           git config user.email "bot@historiachronos.local"
-          git add .
-          git commit -m "Fix indice lezioni, link Macroarea Economia e navigazione view-screen"
+          git add script.js
+          git commit -m "Fix sintassi JavaScript e sblocco pulsanti"
           git push
