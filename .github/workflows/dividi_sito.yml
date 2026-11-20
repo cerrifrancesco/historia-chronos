@@ -1,107 +1,45 @@
-name: Ripara Quiz su Tutto il Sito
+name: Aggiungi Analytics e SEO
 
 on:
   workflow_dispatch:
 
 jobs:
-  fix-quiz:
+  analytics:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Aggiorna logica quiz in script.js
+      - name: Inserisci Cloudflare Web Analytics in tutte le pagine
         run: |
-          cat << 'EOF' > fix_quiz.py
-          import re
+          cat << 'EOF' > add_analytics.py
+          import glob
 
-          with open("script.js", "r", encoding="utf-8") as f:
-              js = f.read()
+          snippet = """<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b58b7e4bc1f94744a6c07990317482ba"}'></script><!-- End Cloudflare Web Analytics -->"""
 
-          new_quiz_logic = """function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
-            const itemContainer = document.getElementById(itemId) || btnElement.closest('div[id]') || btnElement.parentElement.parentElement;
-            const feedbackBox = document.getElementById('feedback-' + itemId) || itemContainer.querySelector('.quiz-feedback');
-            const allBtns = itemContainer.querySelectorAll('.quiz-opt-btn');
-            
-            const data = quizDatabase[itemId] || { 
-              correctOpt: 'B', 
-              explanation: 'Risposta registrata correttamente nel sistema Historia Chronos.' 
-            };
+          files = ["index.html"] + glob.glob("lezioni/*.html")
+          count = 0
 
-            allBtns.forEach(btn => btn.style.pointerEvents = 'none');
-            
-            if (feedbackBox) {
-              feedbackBox.style.display = 'block';
+          for path in files:
+              with open(path, "r", encoding="utf-8") as f:
+                  html = f.read()
 
-              if (isCorrect) {
-                btnElement.style.backgroundColor = 'rgba(34, 197, 94, 0.3)';
-                btnElement.style.borderColor = '#22c55e';
-                feedbackBox.className = 'quiz-feedback correct';
-                feedbackBox.innerHTML = `<strong>CORRETTO!!! 🎉</strong><br>${data.explanation}`;
-              } else {
-                btnElement.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
-                btnElement.style.borderColor = '#ef4444';
-                feedbackBox.className = 'quiz-feedback wrong';
-                feedbackBox.innerHTML = `<strong>SBAGLIATO! ❌</strong><br><strong>La risposta corretta era la ${data.correctOpt}.</strong><br><em>Spiegazione:</em> ${data.explanation}`;
-              }
-            }
+              if "b58b7e4bc1f94744a6c07990317482ba" not in html and "</body>" in html:
+                  html = html.replace("</body>", f"{snippet}\n</body>")
+                  with open(path, "w", encoding="utf-8") as f:
+                      f.write(html)
+                  count += 1
 
-            // Trova il pulsante "Rifai il Quiz" sia tramite ID che dentro il contenitore del quiz
-            const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + String(lezioneNum || '').replace('.', '-');
-            const quizBox = itemContainer.closest('.lezione-section-box') || itemContainer.parentElement;
-            const resetBtn = document.getElementById(resetBtnId) || (quizBox ? quizBox.querySelector('button[onclick*="resetQuiz"]') : null);
-            if (resetBtn) resetBtn.style.display = 'inline-block';
-          }
-
-          function resetQuiz(containerId, lezioneNum, btnElement) {
-            let container = document.getElementById(containerId);
-            if (!container && btnElement) {
-              container = btnElement.closest('.lezione-section-box') || btnElement.parentElement;
-            }
-            if (!container && typeof event !== 'undefined' && event.target) {
-              container = event.target.closest('.lezione-section-box') || event.target.parentElement;
-            }
-            if (!container) return;
-
-            const allBtns = container.querySelectorAll('.quiz-opt-btn');
-            const allFeedbacks = container.querySelectorAll('.quiz-feedback');
-
-            allBtns.forEach(btn => {
-              btn.style.pointerEvents = 'auto';
-              btn.style.backgroundColor = 'var(--bg-card)';
-              btn.style.borderColor = 'var(--border-gold)';
-            });
-
-            allFeedbacks.forEach(fb => {
-              fb.style.display = 'none';
-              fb.innerHTML = '';
-            });
-
-            const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + String(lezioneNum || '').replace('.', '-');
-            const resetBtn = document.getElementById(resetBtnId) || container.querySelector('button[onclick*="resetQuiz"]');
-            if (resetBtn) resetBtn.style.display = 'none';
-          }"""
-
-          pattern = re.compile(r"function checkAnswer\(.*?function resetQuiz\(.*?\n    \}", re.DOTALL)
-          if pattern.search(js):
-              js = pattern.sub(new_quiz_logic, js)
-          else:
-              raise RuntimeError("Blocco checkAnswer/resetQuiz non trovato in script.js")
-
-          with open("script.js", "w", encoding="utf-8") as f:
-              f.write(js)
-
-          print("Logica quiz universalizzata con successo!")
+          print(f"Cloudflare Web Analytics aggiunto a {count} pagine!")
           EOF
-          python fix_quiz.py
-          rm fix_quiz.py
-          node --check script.js
+          python add_analytics.py
+          rm add_analytics.py
 
       - name: Salva su GitHub
         run: |
           git config user.name "Historia Chronos Bot"
           git config user.email "bot@historiachronos.local"
-          git add script.js
-          git commit -m "Fix universale pulsante Rifai il Quiz su lezioni e Mega Aree"
+          git add .
+          git commit -m "Attivato Cloudflare Web Analytics su home e lezioni"
           git push
