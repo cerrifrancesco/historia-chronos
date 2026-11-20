@@ -14,14 +14,23 @@ jobs:
       - name: Installa BeautifulSoup
         run: pip install beautifulsoup4
 
-      - name: Dividi index.html in moduli
+      - name: Dividi file HTML in moduli
         run: |
           cat << 'EOF' > split.py
           import os
           import re
+          import glob
           from bs4 import BeautifulSoup
 
-          with open("index.html", "r", encoding="utf-8") as f:
+          # Trova automaticamente il file .html caricato nel repository
+          html_files = glob.glob("**/*.html", recursive=True)
+          if not html_files:
+              raise FileNotFoundError("Nessun file .html trovato nel repository!")
+
+          file_sorgente = max(html_files, key=os.path.getsize)
+          print(f"Trovato file sorgente: {file_sorgente}")
+
+          with open(file_sorgente, "r", encoding="utf-8") as f:
               html = f.read()
 
           soup = BeautifulSoup(html, "html.parser")
@@ -39,11 +48,9 @@ jobs:
           for s in scripts:
               if s.string and "quizDatabase" in s.string:
                   js_code = s.string.strip()
-                  # Rimuove eventuale duplicato finale di switchEpoca
                   pos = js_code.find("// 1. Funzione per cambiare epoca dai bottoni principali")
                   if pos != -1:
                       js_code = js_code[:pos].strip()
-                  # Aggiorna openLezioneDetail per aprire il file separato
                   old_open = re.search(r"function openLezioneDetail\(lezioneId\)\s*\{.*?\n    \}", js_code, re.DOTALL)
                   if old_open:
                       new_open = """function openLezioneDetail(lezioneId) {
@@ -119,9 +126,12 @@ jobs:
               sitemap_urls.append(f"https://historia-chronos.pages.dev/lezioni/{lez_id}.html")
               pane.decompose()
 
-          # 4. Salva il nuovo index.html leggero
+          # 4. Salva sempre la home page come index.html
           with open("index.html", "w", encoding="utf-8") as f:
               f.write(str(soup))
+
+          if file_sorgente != "index.html" and os.path.exists(file_sorgente):
+              os.remove(file_sorgente)
 
           # 5. Genera sitemap.xml e robots.txt per Google SEO
           sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
