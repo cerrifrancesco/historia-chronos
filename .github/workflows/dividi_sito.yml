@@ -1,58 +1,49 @@
-name: Genera Sitemap e Robots SEO
+name: Dividi World Explorer
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  seo-files:
+  split:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Crea sitemap.xml e robots.txt aggiornati
+      - name: Spezza il file in 3 parti
         run: |
-          cat << 'EOF' > build_seo.py
-          import glob
-          from datetime import date
+          python3 -c '
+          with open("_materiale_agente/World_Explorer_1_convertito.html", "r", encoding="utf-8") as f:
+              text = f.read()
 
-          base_url = "https://historia-chronos.pages.dev"
-          today = date.today().isoformat()
+          # 1. Struttura HTML + CSS (tutto prima dello script finale)
+          idx_script = text.rfind("<script>")
+          html_part = text[:idx_script]
+          js_full = text[idx_script + 8 : text.rfind("</script>")]
 
-          urls = [f"{base_url}/"]
-          for path in sorted(glob.glob("lezioni/*.html")):
-              urls.append(f"{base_url}/{path}")
+          # 2. Dati nazioni vs Logica & Monete
+          idx_logic = js_full.find("function applyNationFilters")
+          if idx_logic == -1:
+              idx_logic = len(js_full) // 2
 
-          sitemap_lines = [
-              '<?xml version="1.0" encoding="UTF-8"?>',
-              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-          ]
-          for u in urls:
-              priority = "1.0" if u == f"{base_url}/" else "0.8"
-              sitemap_lines.append("  <url>")
-              sitemap_lines.append(f"    <loc>{u}</loc>")
-              sitemap_lines.append(f"    <lastmod>{today}</lastmod>")
-              sitemap_lines.append(f"    <priority>{priority}</priority>")
-              sitemap_lines.append("  </url>")
-          sitemap_lines.append("</urlset>")
+          dati_part = js_full[:idx_logic]
+          logica_part = js_full[idx_logic:]
 
-          with open("sitemap.xml", "w", encoding="utf-8") as f:
-              f.write("\n".join(sitemap_lines) + "\n")
+          with open("_materiale_agente/1_struttura.html", "w", encoding="utf-8") as f:
+              f.write(html_part)
+          with open("_materiale_agente/2_dati_nazioni.js", "w", encoding="utf-8") as f:
+              f.write(dati_part)
+          with open("_materiale_agente/3_logica_monete.js", "w", encoding="utf-8") as f:
+              f.write(logica_part)
+          '
+          rm _materiale_agente/World_Explorer_1_convertito.html
 
-          robots_txt = f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml\n"
-          with open("robots.txt", "w", encoding="utf-8") as f:
-              f.write(robots_txt)
-
-          print(f"Generata sitemap.xml con {len(urls)} URL e robots.txt!")
-          EOF
-          python build_seo.py
-          rm build_seo.py
-
-      - name: Salva su GitHub
+      - name: Salva i 3 file su GitHub
         run: |
-          git config user.name "Historia Chronos Bot"
-          git config user.email "bot@historiachronos.local"
-          git add sitemap.xml robots.txt
-          git commit -m "Generati sitemap.xml e robots.txt per Cloudflare Pages"
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add _materiale_agente/
+          git commit -m "Diviso World Explorer in 3 file leggeri"
           git push
