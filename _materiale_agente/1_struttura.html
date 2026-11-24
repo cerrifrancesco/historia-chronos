@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Historia Chronos | World Explorer</title>
+  
+  <!-- Google Fonts & Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#121418', surface: '#1a1d24', cardbg: '#222631',
+            goldprimary: '#d4af37', goldlight: '#f3e5ab', textmain: '#f5f6f8',
+            textmuted: '#9ba1a6', bordergold: 'rgba(212, 175, 55, 0.3)'
+          },
+          fontFamily: { cinzel: ['Cinzel', 'serif'], inter: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-dark: #121418;
+      --bg-surface: #1a1d24;
+      --bg-card: #222631;
+      --gold-primary: #d4af37;
+      --gold-light: #f3e5ab;
+      --text-main: #f5f6f8;
+      --text-muted: #9ba1a6;
+      --border-gold: rgba(212, 175, 55, 0.3);
+      --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+    h1, h2, h3, .brand-text, .box-title { font-family: 'Cinzel', serif; }
+    .gold-text { color: var(--gold-primary); }
+
+    /* HEADER */
+    .main-header {
+      position: fixed; top: 0; left: 0; width: 100%;
+      background-color: rgba(18, 20, 24, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-gold);
+      z-index: 1000;
+    }
+    .header-container {
+      max-width: 1200px; margin: 0 auto; padding: 15px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .brand-logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; }
+    /* SELETTORE PRINCIPALE IN ALTO: MONDO / MONETE */
+    .top-mode-switch {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 26px;
+      flex-wrap: wrap;
+    }
+    .mode-switch-btn {
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-gold);
+      padding: 11px 24px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+    .mode-switch-btn:hover {
+      border-color: var(--gold-primary);
+      transform: translateY(-1px);
+    }
+    .mode-switch-btn.active {
+      background-color: var(--gold-primary);
+      color: var(--bg-dark);
+      border-color: var(--gold-primary);
+    }
+
+    /* CONTAINER PRINCIPALE */
+    .main-container {
+      max-width: 1200px; margin: 100px auto 40px auto; padding: 20px;
+    }
+    /* BARRA RICERCA E FILTRO RAPIDO SOTTO-AREA */
+    .explorer-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .search-nation-input {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      min-width: 240px;
+      max-width: 380px;
+      width: 100%;
+      outline: none;
+      transition: var(--transition-smooth);
+    }
+    .search-nation-input:focus {
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+    }
+    .subarea-select {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      outline: none;
+      cursor: pointer;
+    }
+    .nation-badge-pill {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      color: var(--gold-primary);
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+    }
+
+    /* RIQUADRO STATO SELEZIONATO SULLE MAPPE */
+    .map-selected-banner {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 18px;
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .map-open-btn {
+      background-color: var(--gold-primary);
+      color: var(--bg-dark);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* FILTRI CONTINENTI */
+    .continents-bar {
+      display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 30px;
+    }
+    .continent-btn {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      color: var(--text-muted);
+      padding: 8px 18px; border-radius: 20px; font-size: 0.9rem;
+      cursor: pointer; white-space: nowrap; transition: var(--transition-smooth);
+    }
+    .continent-btn:hover, .continent-btn.active {
+      background-color: var(--gold-primary);
+      color: var(--bg-dark);
+      border-color: var(--gold-primary);
+      font-weight: 600;
+    }
+    /* SEZIONE INTRODUTTIVA INIZIALE */
+    .intro-explorer-box {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+    }
+    .intro-note {
+      background: rgba(212, 175, 55, 0.06);
+      border-left: 3px solid var(--gold-primary);
+      padding: 15px 18px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 22px;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: var(--text-main);
+    }
+    .maps-dual-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .maps-dual-grid { grid-template-columns: 1fr; }
+    }
+    .map-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+    }
+    .map-card h4 {
+      color: var(--gold-primary);
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    .map-card small {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+    }
+    .map-svg-box {
+      width: 100%;
+      height: 290px;
+      background: #0a0c10;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+    }
+    .map-svg-box:active { cursor: grabbing; }
+    .intro-cta-bar {
+      text-align: center;
+      margin-top: 22px;
+    }
+    .intro-start-btn {
+      background-color: var(--gold-primary);
+      color: var(--bg-dark);
+      border: none;
+      padding: 11px 24px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+    .intro-start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+    }
+
+    /* GRIGLIA NAZIONI (HOME SEZIONE) */
+    .nations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .nation-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      border-radius: 12px; padding: 20px;
+      cursor: pointer; transition: var(--transition-smooth);
+      display: flex; align-items: center; gap: 15px;
+    }
+    .nation-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--gold-primary);
+      box-shadow: 0 8px 25px rgba(212, 175, 55, 0.15);
+    }
+    .nation-flag-thumb {
+      width: 50px; height: 35px; object-fit: cover; border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .nation-info h4 { font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px; }
+    .nation-info span { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
+    .americas-subbar {
+      display: none;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: -15px;
+      margin-bottom: 25px;
+    }
+    .americas-subbar.show {
+      display: flex;
+    }
+    .subcontinent-btn {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: var(--transition-smooth);
+    }
+    .subcontinent-btn:hover,
+    .subcontinent-btn.active {
+      background-color: var(--gold-primary);
+      color: var(--bg-dark);
+      border-color: var(--gold-primary);
+    }
+
+    /* SCHERMATA DETTAGLIO NAZIONE */
+    #nationDetailView {
+      display: none;
+    }
+    .back-btn {
+      background: none; border: 1px solid var(--border-gold); color: var(--gold-primary);
+      padding: 8px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 25px;
+      font-weight: 600; transition: var(--transition-smooth); display: inline-flex; align-items: center; gap: 8px;
+    }
+    .back-btn:hover { background-color: var(--gold-primary); color: var(--bg-dark); }
+
+    /* NUOVA STRUTTURA A BLOCCHI SOVRAPPOSTI */
+    .detail-hero-box {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      border-radius: 12px; padding: 25px; margin-bottom: 25px;
+    }
+
+    .detail-cover-large {
+  width: 100%;       /* Larghezza fissa che riempie perfettamente il box */
+  height: auto;      /* L'altezza si calcola da sola in base alle proporzioni reali dell'immagine */
+  display: block;
+  border-radius: 8px; /* Mantiene i bordi arrotondati negli angoli */
+}
+    /* Griglia inferiore: Sinistra (Bandiera + Dati) | Destra (Storia) */
+    .detail-split-grid {
+      display: grid; grid-template-columns: 1fr 1.5fr; gap: 25px;
+    }
+    @media (max-width: 900px) {
+      .detail-split-grid { grid-template-columns: 1fr; }
+    }
+    
+    .detail-box {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      border-radius: 12px; padding: 25px; margin-bottom: 25px;
+    }
+
+     .flag-box-img {
+      width: auto;
+      max-width: 100%;
+      height: 160px;
+      object-fit: contain;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      margin-bottom: 15px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      background: transparent;
+    }
+
+    .flag-container-clean {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+    }
+    .data-row {
+      display: flex; justify-content: space-between; padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.95rem;
+    }
+    .data-row:last-child { border-bottom: none; }
+    .data-label { color: var(--text-muted); font-weight: 500; }
+    .data-value { color: var(--text-main); font-weight: 600; text-align: right; }
+   
+    /* AREA MONETE: MAPPA AMPIA QUASI A TUTTO SCHERMO + POP-UP */
+    .currencies-section {
+      display: none;
+      width: 96vw;
+      max-width: 1380px;
+      margin: 10px auto 30px auto;
+      position: relative;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .currencies-map-box {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-gold);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .currencies-map-canvas {
+      width: 100%;
+      height: 70vh;
+      min-height: 440px;
+      max-height: 720px;
+      background: #0a0c10;
+      border: 1px solid rgba(212, 175, 55, 0.28);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+    }
+    .currencies-map-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* POP-UP DETTAGLIO MONETA */
+    .currency-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+    .currency-modal-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--gold-primary);
+      border-radius: 14px;
+      max-width: 540px;
+      width: 100%;
+      padding: 24px;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+    }
+    .currency-modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: transparent;
+      border: 1px solid var(--border-gold);
+      color: var(--gold-primary);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .currency-modal-close:hover {
+      background: rgba(212, 175, 55, 0.15);
+    }
+    .currency-modal-badge {
+      display: inline-block;
+      background: rgba(212, 175, 55, 0.14);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-primary);
+      font-weight: 700;
+      font-size: 0.92rem;
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin: 10px 0 14px 0;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="main-header">
+    <div class="header-container">
+      <div class="brand-logo">
+        <span>🏛️</span>
+        <span>Historia <span class="gold-text">Chronos</span></span>
+      </div>
+      <div style="font-size: 0.9rem; color: var(--gold-primary); font-weight: 600;">World Explorer</div>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+      <!-- Due pulsanti principali in alto: Mondo / Monete -->
+      <div class="top-mode-switch" id="topModeSwitch">
+        <button class="mode-switch-btn active" id="btnModeWorld" onclick="switchAppMode('world', this)">
+          Mondo
+        </button>
+        <button class="mode-switch-btn" id="btnModeCurrency" onclick="switchAppMode('currency', this)">
+          Monete
+        </button>
+      </div>
+
+    <!-- VISTA 1: HOME CATALOGO NAZIONI -->
+    <div id="homeNationView">
+      <div style="text-align: center; margin-bottom: 40px;">
+        <h1 style="font-size: 2.2rem; margin-bottom: 10px;">World <span class="gold-text">Explorer</span></h1>
+        <p style="color: var(--text-muted);">Atlante geopolitico, storico ed enciclopedico delle nazioni del mondo.</p>
+      </div>
+
+      <!-- Filtri per Continente -->
+      <div class="continents-bar" id="continentsBar">
+        <button class="continent-btn" onclick="filterContinent('all', this)">Tutti i Continenti</button>
+        <button class="continent-btn" onclick="filterContinent('Europa', this)">Europa</button>
+        <button class="continent-btn" onclick="filterContinent('Asia', this)">Asia</button>
+        <button class="continent-btn" onclick="filterContinent('Americhe', this)">Americhe</button>
+        <button class="continent-btn" onclick="filterContinent('Africa', this)">Africa</button>
+        <button class="continent-btn" onclick="filterContinent('Oceania', this)">Oceania</button>
+        <button class="continent-btn" onclick="filterContinent('Antartide', this)">Antartide</button>
+      </div>
+
+      <!-- Sotto-filtri visibili solo quando si seleziona Americhe -->
+      <div class="americas-subbar" id="americasSubbar">
+        <button class="subcontinent-btn active" id="subBtnAll" onclick="filterAmericasSub('all', this)">Tutte</button>
+        <button class="subcontinent-btn" id="subBtnNorth" onclick="filterAmericasSub('America settentrionale', this)">America settentrionale</button>
+        <button class="subcontinent-btn" id="subBtnSouth" onclick="filterAmericasSub('America meridionale', this)">America meridionale</button>
+      </div>
+      <!-- Ricerca rapida e filtro sotto-area/regione -->
+      <div class="explorer-toolbar" id="explorerToolbar">
+        <input
+          type="text"
+          id="nationSearchInput"
+          class="search-nation-input"
+          placeholder="Cerca nazione, capitale o lingua..."
+          oninput="applyNationFilters()"
+        >
+        <select id="subareaFilterSelect" class="subarea-select" onchange="applyNationFilters()">
+          <option value="all">Tutte le sotto-aree / lingue</option>
+        </select>
+      </div>
+
+
+      <!-- SCHERMATA INIZIALE (Nota ONU + Planisfero + Mappamondo 3D) -->
+      <div class="intro-explorer-box" id="introExplorerBox">
+        <div class="intro-note">
+          <strong style="color: var(--gold-primary);">Criterio di suddivisione geopolitica e nota sull'Europa:</strong><br>
+          La classificazione dei 193 Stati membri dell'<strong>ONU</strong> (più gli osservatori e le aree continentali) segue le convenzioni internazionali. Per l'<strong>Europa</strong> è stata adottata una rivisitazione geopolitica e storico-culturale rispetto al solo confine fisico-geografico: alcuni Stati transcontinentali o situati nell'area caucasica e mediterranea orientale (come <em>Russia, Turchia, Kazakistan, Georgia, Armenia, Azerbaigian e Cipro</em>) presentano territori interamente o parzialmente in Asia, ma vengono tradizionalmente inclusi o collegati al quadro europeo per ragioni storiche, culturali e istituzionali. Seleziona un continente dalla barra qui sopra per esplorare le singole schede.
+        </div>
+
+        <div class="maps-dual-grid">
+          <div class="map-card">
+            <h4>Planisfero Politico</h4>
+            <small>Trascina per spostarti • Pizzica o usa la rotella per zoomare</small>
+            <div class="map-svg-box" id="flatWorldMap"></div>
+          </div>
+        <div class="map-selected-banner" id="mapSelectedBanner">
+          <div>
+            <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Stato selezionato sulla mappa</span>
+            <div id="mapSelectedName" style="color: var(--gold-primary); font-weight: 700; font-size: 1.05rem;"></div>
+            <small id="mapSelectedStatus" style="color: var(--text-muted);"></small>
+          </div>
+          <button id="mapOpenNationBtn" class="map-open-btn" style="display: none;">Apri scheda nazione →</button>
+        </div>
+
+          <div class="map-card">
+            <h4>Mappamondo Interattivo 3D</h4>
+            <small>Trascina per ruotare il globo • Pizzica o usa la rotella per zoomare</small>
+            <div class="map-svg-box" id="globeWorldMap"></div>
+          </div>
+        </div>
+
+        <div class="intro-cta-bar">
+          <button class="intro-start-btn" onclick="filterContinent('all', document.querySelector('#continentsBar .continent-btn'))">
+            Esplora tutte le nazioni →
+          </button>
+        </div>
+      </div>
+
+      <!-- Box dedicato all'Antartide (visibile solo quando si seleziona Antartide) -->
+      <div id="antarcticaBox" style="display: none; background-color: var(--bg-surface); border: 1px solid var(--border-gold); border-radius: 12px; padding: 25px; margin-top: 10px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 18px;">
+          <h3 class="gold-text" style="font-size: 1.4rem; margin: 0;">7. Antartide – 0 nazioni</h3>
+          <span style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Regione polare australe • Trattato Antartico</span>
+        </div>
+        <img src="https://images.unsplash.com/photo-1535752385016-16aa049b6a8d?q=80&w=1823&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D" alt="Antartide" style="width: 100%; max-height: 420px; object-fit: cover; border-radius: 8px; display: block; margin-bottom: 18px;">
+        <p style="color: var(--text-main); line-height: 1.7; margin: 0;">
+          L'Antartide è il continente più meridionale, freddo, ventoso e arido della Terra, quasi interamente ricoperto da una spessa calotta di ghiaccio e circondato dall'Oceano Meridionale. Non possiede Stati sovrani né una popolazione residente permanente, ma ospita basi di ricerca scientifiche internazionali gestite in base al Sistema del Trattato Antartico, che riserva il continente ad attività pacifiche e alla ricerca scientifica.
+        </p>
+      </div>
+
+      <!-- Griglia Nazioni Dinamica (nascosta all'avvio finché non scegli un continente) -->
+      <div class="nations-grid" id="nationsGrid" style="display: none;"></div>
+      <!-- SCHERMATA MONETE DEL MONDO (Mappa ampia cliccabile) -->
+      <div class="currencies-section" id="currenciesScreen">
+        <div class="currencies-map-box">
+          <div style="text-align: center; margin-bottom: 14px;">
+            <h2 style="font-size: 1.7rem; margin-bottom: 6px;">Monete del <span class="gold-text">Mondo</span></h2>
+            <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0;">
+              Clicca su una nazione sulla mappa per aprire il pop-up con valuta e storia. Trascina per spostarti, pizzica o usa la rotella per zoomare.
+            </p>
+          </div>
+          <div class="currencies-map-canvas" id="currenciesWorldMap"></div>
+        </div>
+      </div>
+
+      <!-- POP-UP MONETA -->
+      <div class="currency-modal-overlay" id="currencyModalOverlay" onclick="if(event.target === this) closeCurrencyModal()">
+        <div class="currency-modal-card">
+          <button class="currency-modal-close" onclick="closeCurrencyModal()">✕ Chiudi</button>
+          <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;">Valuta Nazionale</span>
+          <h3 id="currModalNationName" style="font-size: 1.5rem; margin: 4px 0 0 0; color: var(--text-main);"></h3>
+          <div class="currency-modal-badge" id="currModalCurrencyName"></div>
+          <p id="currModalHistory" style="color: var(--text-main); line-height: 1.65; font-size: 0.95rem; margin: 0;"></p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VISTA 2: DETTAGLIO DELLA SINGOLA NAZIONE (NUOVO LAYOUT) -->
+    <div id="nationDetailView">
+      <button class="back-btn" onclick="backToHome()">← Torna all'Atlante</button>
+      
+      <!-- 1. Blocco Superiore: Nome e Immagine di Copertina a Tutta Larghezza -->
+      <div class="detail-hero-box">
+        <h1 id="detTitle" class="gold-text" style="font-size: 2rem; margin-bottom: 5px;">Nome Stato</h1>
+        <p style="font-size: 0.9rem; color: var(--text-muted);" id="detSubtitle">Area Geografica</p>
+        <img id="detCover" src="" alt="Copertina" class="detail-cover-large">
+      </div>
+
+      <!-- 2. Blocco Inferiore diviso a metà -->
+      <div class="detail-split-grid">
+        
+        <!-- Colonna di Sinistra: Bandiera Ufficiale e Dati Chiave -->
+        <div>
+          <div class="detail-box">
+            <h3 class="box-title" style="font-size: 1.1rem; margin-bottom: 15px;">Bandiera Ufficiale</h3>
+            <img id="detFlagBoxImg" src="" alt="Bandiera Ufficiale" class="flag-box-img">
+          </div>
+
+          <div class="detail-box">
+            <h3 class="box-title" style="font-size: 1.1rem; margin-bottom: 15px;">Dettagli Chiave</h3>
+            <div class="data-row"><span class="data-label">Nome Ufficiale</span><span class="data-value" id="detOfficialName">-</span></div>
+            <div class="data-row"><span class="data-label">Capoluogo</span><span class="data-value" id="detCapital">-</span></div>
+            <div class="data-row"><span class="data-label">Popolazione</span><span class="data-value" id="detPopulation">-</span></div>
+            <div class="data-row"><span class="data-label">Lingua Ufficiale</span><span class="data-value" id="detLanguage">-</span></div>
+            <div class="data-row"><span class="data-label">Continente</span><span class="data-value" id="detContinent">-</span></div>
+            <div class="data-row"><span class="data-label">Valuta</span><span class="data-value" id="detCurrency">-</span></div>
+          </div>
+        </div>
+
+        <!-- Colonna di Destra: Profilo Storico ed Enciclopedico Ampio -->
+        <div>
+          <div class="detail-box" style="height: 100%;">
+            <h3 class="box-title" style="font-size: 1.1rem; margin-bottom: 15px;">Profilo Enciclopedico e Storico</h3>
+            <div id="detDescription" style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.8;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC -->
+  
