@@ -1,0 +1,44 @@
+name: Dividi Sito
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Spezza World Explorer in 3 file leggeri
+        run: |
+          python3 -c '
+          with open("_materiale_agente/World_Explorer_1_convertito.html", "r", encoding="utf-8") as f:
+              text = f.read()
+
+          idx_script = text.rfind("<script>")
+          html_part = text[:idx_script]
+          js_full = text[idx_script + 8 : text.rfind("</script>")]
+
+          idx_logic = js_full.find("function applyNationFilters")
+          if idx_logic == -1:
+              idx_logic = len(js_full) // 2
+
+          with open("_materiale_agente/1_struttura.html", "w", encoding="utf-8") as f:
+              f.write(html_part)
+          with open("_materiale_agente/2_dati_nazioni.js", "w", encoding="utf-8") as f:
+              f.write(js_full[:idx_logic])
+          with open("_materiale_agente/3_logica_monete.js", "w", encoding="utf-8") as f:
+              f.write(js_full[idx_logic:])
+          '
+          rm _materiale_agente/World_Explorer_1_convertito.html
+
+      - name: Salva i 3 file su GitHub
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add _materiale_agente/
+          git commit -m "Diviso World Explorer in 3 file"
+          git push
