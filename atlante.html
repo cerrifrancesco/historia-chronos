@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Historia Chronos | Atlante &amp; Monete</title>
+
+  <!-- Google Fonts & Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#121418', surface: '#1a1d24', cardbg: '#222631',
+            goldprimary: '#d4af37', goldlight: '#f3e5ab', textmain: '#f5f6f8',
+            textmuted: '#9ba1a6', bordergold: 'rgba(212, 175, 55, 0.3)'
+          },
+          fontFamily: { cinzel: ['Cinzel', 'serif'], inter: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="atlante.css" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- HEADER INTEGRATO HISTORIA CHRONOS -->
+  <header class="main-header">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" style="text-decoration: none; color: inherit;">
+        <span>🏛️</span>
+        <span>Historia <span class="gold-text">Chronos</span></span>
+      </a>
+      <nav style="display: flex; align-items: center; gap: 20px;">
+        <a href="index.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.color='#d4af37'" onmouseout="this.style.color='#9ba1a6'">← Torna alla Home</a>
+        <span style="font-size: 0.9rem; color: var(--gold-primary); font-weight: 600;">Atlante &amp; Monete</span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+    <!-- Due pulsanti principali in alto: Mondo / Monete -->
+    <div class="top-mode-switch" id="topModeSwitch">
+      <button class="mode-switch-btn active" id="btnModeWorld" onclick="switchAppMode('world', this)">
+        Mondo
+      </button>
+      <button class="mode-switch-btn" id="btnModeCurrency" onclick="switchAppMode('currency', this)">
+        Monete
+      </button>
+    </div>
+
+    <!-- VISTA 1: HOME CATALOGO NAZIONI -->
+    <div id="homeNationView">
+      <div style="text-align: center; margin-bottom: 40px;">
+        <h1 style="font-size: 2.2rem; margin-bottom: 10px;">World <span class="gold-text">Explorer</span></h1>
+        <p style="color: var(--text-muted);">Atlante geopolitico, storico ed enciclopedico delle nazioni del mondo.</p>
+      </div>
+
+      <!-- Filtri per Continente -->
+      <div class="continents-bar" id="continentsBar">
+        <button class="continent-btn" onclick="filterContinent('all', this)">Tutti i Continenti</button>
+        <button class="continent-btn" onclick="filterContinent('Europa', this)">Europa</button>
+        <button class="continent-btn" onclick="filterContinent('Asia', this)">Asia</button>
+        <button class="continent-btn" onclick="filterContinent('Americhe', this)">Americhe</button>
+        <button class="continent-btn" onclick="filterContinent('Africa', this)">Africa</button>
+        <button class="continent-btn" onclick="filterContinent('Oceania', this)">Oceania</button>
+        <button class="continent-btn" onclick="filterContinent('Antartide', this)">Antartide</button>
+      </div>
+
+      <!-- Sotto-filtri visibili solo quando si seleziona Americhe -->
+      <div class="americas-subbar" id="americasSubbar">
+        <button class="subcontinent-btn active" id="subBtnAll" onclick="filterAmericasSub('all', this)">Tutte</button>
+        <button class="subcontinent-btn" id="subBtnNorth" onclick="filterAmericasSub('America settentrionale', this)">America settentrionale</button>
+        <button class="subcontinent-btn" id="subBtnSouth" onclick="filterAmericasSub('America meridionale', this)">America meridionale</button>
+      </div>
+
+      <!-- Ricerca rapida e filtro sotto-area/regione -->
+      <div class="explorer-toolbar" id="explorerToolbar">
+        <input
+          type="text"
+          id="nationSearchInput"
+          class="search-nation-input"
+          placeholder="Cerca nazione, capitale o lingua..."
+          oninput="applyNationFilters()"
+        >
+        <select id="subareaFilterSelect" class="subarea-select" onchange="applyNationFilters()">
+          <option value="all">Tutte le sotto-aree / lingue</option>
+        </select>
+      </div>
+
+      <!-- SCHERMATA INIZIALE (Nota ONU + Planisfero + Mappamondo 3D) -->
+      <div class="intro-explorer-box" id="introExplorerBox">
+        <div class="intro-note">
+          <strong style="color: var(--gold-primary);">Criterio di suddivisione geopolitica e nota sull'Europa:</strong><br>
+          La classificazione dei 193 Stati membri dell'<strong>ONU</strong> (più gli osservatori e le aree continentali) segue le convenzioni internazionali. Per l'<strong>Europa</strong> è stata adottata una rivisitazione geopolitica e storico-culturale rispetto al solo confine fisico-geografico: alcuni Stati transcontinentali o situati nell'area caucasica e mediterranea orientale (come <em>Russia, Turchia, Kazakistan, Georgia, Armenia, Azerbaigian e Cipro</em>) presentano territori interamente o parzialmente in Asia, ma vengono tradizionalmente inclusi o collegati al quadro europeo per ragioni storiche, culturali e istituzionali. Seleziona un continente dalla barra qui sopra per esplorare le singole schede.
+        </div>
+
+        <div class="maps-dual-grid">
+          <div class="map-card">
+            <h4>Planisfero Politico</h4>
+            <small>Trascina per spostarti • Pizzica o usa la rotella per zoomare</small>
+            <div class="map-svg-box" id="flatWorldMap"></div>
+          </div>
+          <div class="map-selected-banner" id="mapSelectedBanner">
+            <div>
+              <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Stato selezionato sulla mappa</span>
+              <div id="mapSelectedName" style="color: var(--gold-primary); font-weight: 700; font-size: 1.05rem;"></div>
+              <small id="mapSelectedStatus" style="color: var(--text-muted);"></small>
+            </div>
+            <button id="mapOpenNationBtn" class="map-open-btn" style="display: none;">Apri scheda nazione →</button>
+          </div>
+
+          <div class="map-card">
+            <h4>Mappamondo Interattivo 3D</h4>
+            <small>Trascina per ruotare il globo • Pizzica o usa la rotella per zoomare</small>
+            <div class="map-svg-box" id="globeWorldMap"></div>
+          </div>
+        </div>
+
+        <div class="intro-cta-bar">
+          <button class="intro-start-btn" onclick="filterContinent('all', document.querySelector('#continentsBar .continent-btn'))">
+            Esplora tutte le nazioni →
+          </button>
+        </div>
+      </div>
+
+      <!-- Box dedicato all'Antartide -->
+      <div id="antarcticaBox" style="display: none; background-color: var(--bg-surface); border: 1px solid var(--border-gold); border-radius: 12px; padding: 25px; margin-top: 10px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 18px;">
+          <h3 class="gold-text" style="font-size: 1.4rem; margin: 0;">7. Antartide – 0 nazioni</h3>
+          <span style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Regione polare australe • Trattato Antartico</span>
+        </div>
+        <img src="https://images.unsplash.com/photo-1535752385016-16aa049b6a8d?q=80&w=1823&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D" alt="Antartide" style="width: 100%; max-height: 420px; object-fit: cover; border-radius: 8px; display: block; margin-bottom: 18px;">
+        <p style="color: var(--text-main); line-height: 1.7; margin: 0;">
+          L'Antartide è il continente più meridionale, freddo, ventoso e arido della Terra, quasi interamente ricoperto da una spessa calotta di ghiaccio e circondato dall'Oceano Meridionale. Non possiede Stati sovrani né una popolazione residente permanente, ma ospita basi di ricerca scientifiche internazionali gestite in base al Sistema del Trattato Antartico, che riserva il continente ad attività pacifiche e alla ricerca scientifica.
+        </p>
+      </div>
+
+      <!-- Griglia Nazioni Dinamica -->
+      <div class="nations-grid" id="nationsGrid" style="display: none;"></div>
+
+      <!-- SCHERMATA MONETE DEL MONDO -->
+      <div class="currencies-section" id="currenciesScreen">
+        <div class="currencies-map-box">
+          <div style="text-align: center; margin-bottom: 14px;">
+            <h2 style="font-size: 1.7rem; margin-bottom: 6px;">Monete del <span class="gold-text">Mondo</span></h2>
+            <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0;">
+              Clicca su una nazione sulla mappa per aprire il pop-up con valuta e storia. Trascina per spostarti, pizzica o usa la rotella per zoomare.
+            </p>
+          </div>
+          <div class="currencies-map-canvas" id="currenciesWorldMap"></div>
+        </div>
+      </div>
+
+      <!-- POP-UP MONETA -->
+      <div class="currency-modal-overlay" id="currencyModalOverlay" onclick="if(event.target === this) closeCurrencyModal()">
+        <div class="currency-modal-card">
+          <button class="currency-modal-close" onclick="closeCurrencyModal()">✕ Chiudi</button>
+          <span style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;">Valuta Nazionale</span>
+          <h3 id="currModalNationName" style="font-size: 1.5rem; margin: 4px 0 0 0; color: var(--text-main);"></h3>
+          <div class="currency-modal-badge" id="currModalCurrencyName"></div>
+          <p id="currModalHistory" style="color: var(--text-main); line-height: 1.65; font-size: 0.95rem; margin: 0;"></p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VISTA 2: DETTAGLIO DELLA SINGOLA NAZIONE -->
+    <div id="nationDetailView">
+      <button class="back-btn" onclick="backToHome()">← Torna all'Atlante</button>
+
+      <!-- 1. Blocco Superiore: Nome e Immagine di Copertina -->
+      <div class="detail-hero-box">
+        <h1 id="detTitle" class="gold-text" style="font-size: 2rem; margin-bottom: 5px;">Nome Stato</h1>
+        <p style="font-size: 0.9rem; color: var(--text-muted);" id="detSubtitle">Area Geografica</p>
+        <img id="detCover" src="" alt="Copertina" class="detail-cover-large">
+      </div>
+
+      <!-- 2. Blocco Inferiore diviso a metà -->
+      <div class="detail-split-grid">
+        <div>
+          <div class="detail-box">
+            <h3 class="box-title" style="font-size: 1.1rem; margin-bottom: 15px;">Bandiera Ufficiale</h3>
+            <img id="detFlagBoxImg" src="" alt="Bandiera Ufficiale" class="flag-box-img">
+          </div>
+
+          <div class="detail-box">
+            <h3 class="box-title" style="font-size: 1.1rem; margin-bottom: 15px;">Dettagli Chiave</h3>
+            <div class="data-row"><span class="data-label">Nome Ufficiale</span><span class="data-value" id="detOfficialName">-</span></div>
+            <div class="data-row"><span class="data-label">Capoluogo</span><span class="data-value" id="detCapital">-</span></div>
+            <div class="data-row"><span class="data-label">Popolazione</span><span class="data-value" id="detPopulation">-</span></div>
+            <div class="data-row"><span class="data-label">Lingua Ufficiale</span><span class="data-value" id="detLanguage">-</span></div>
+            <div class="data-row"><span class="data-label">Continente</span><span class="data-value" id="detContinent">-</span></div>
+            <div class="data-row"><span class="data-label">Valuta</span><span class="data-value" id="detCurrency">-</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="detail-box" style="height: 100%;">
+            <h3 class="box-title" style="font-size: 1.1rem; margin-bottom: 15px;">Profilo Enciclopedico e Storico</h3>
+            <div id="detDescription" style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.8;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="atlante.js"></script>
+</body>
+</html>
