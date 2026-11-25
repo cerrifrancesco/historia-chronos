@@ -329,6 +329,23 @@ function sendQuickPrompt(text) {
   handleChatSubmit(new Event("submit"));
 }
 
+function triggerSmartAction(mode) {
+  if (isChronosGenerating) return;
+  const hasContext = chronosChatHistory.length > 0;
+
+  if (mode === "explain") {
+    const prompt = hasContext
+      ? "Puoi rispiegarmi quest'ultimo concetto in modo ancora più semplice e chiaro, magari con un esempio concreto?"
+      : "Vorrei che mi spiegassi un argomento di storia in modo semplice: chiedimi pure su quale epoca, evento o personaggio ho dei dubbi.";
+    sendQuickPrompt(prompt);
+  } else if (mode === "quiz") {
+    const prompt = hasContext
+      ? "Fammi una domanda di verifica su questo stesso argomento storico per vedere se ho capito bene. Aspetta la mia risposta prima di darmi la soluzione."
+      : "Interrogami su un argomento importante di storia (scegli tu tra Antica, Medievale, Moderna o Contemporanea). Fammi una sola domanda chiara e aspetta la mia risposta prima di correggermi.";
+    sendQuickPrompt(prompt);
+  }
+}
+
 async function handleChatSubmit(event) {
   event.preventDefault();
   if (isChronosGenerating) return;
