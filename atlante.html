@@ -28,6 +28,7 @@
   </script>
   <link href="style.css" rel="stylesheet" />
   <link href="atlante.css" rel="stylesheet" />
+  <link rel="prefetch" href="index.html" />
 </head>
 <body>
 
@@ -39,7 +40,7 @@
         <span class="logo-text">Historia <span class="gold-text">Chronos</span></span>
       </a>
       <nav class="desktop-nav">
-        <a class="nav-link" href="index.html#hero">Home</a>
+        <a class="nav-link" href="index.html">Home</a>
         <a class="nav-link active" href="#atlante-content">Esplora</a>
         <a class="nav-link" href="index.html#ai-tutor">Chronos AI</a>
       </nav>
@@ -56,13 +57,13 @@
       <button class="close-drawer" id="closeDrawer" onclick="document.getElementById('mobileDrawer').classList.remove('open')">×</button>
     </div>
     <nav class="mobile-nav">
-      <a class="mobile-link" href="index.html#hero">Home</a>
+      <a class="mobile-link" href="index.html">Home</a>
       <a class="mobile-link" href="index.html#percorsi">Esplora Filoni</a>
       <a class="mobile-link" href="index.html#ai-tutor">Chronos AI Tutor</a>
     </nav>
   </div>
 
-  <!-- HERO IDENTICA A INDEX.HTML CON "ATLANTE & MONETE" ATTIVO -->
+  <!-- HERO IDENTICA A INDEX.HTML CON I 3 PULSANTI ALLINEATI -->
   <section class="hero-section" id="hero">
     <div class="hero-content">
       <div class="badge-gold">Piattaforma Multimediale di Storia</div>
@@ -71,15 +72,15 @@
         Dalle lezioni scolastiche ai grandi filoni trasversali: economia, tecnologia, geopolitica e test di verifica interattivi.
       </p>
       <div class="pathway-switcher">
-        <a class="path-btn" href="index.html#percorsi" style="text-decoration: none;">
+        <button class="path-btn" onclick="window.location.href='index.html'">
           <span class="btn-icon">📚</span> Programma Scolastico
-        </a>
-        <a class="path-btn" href="index.html#percorsi" style="text-decoration: none;">
+        </button>
+        <button class="path-btn" onclick="window.location.href='index.html'">
           <span class="btn-icon">🧭</span> Mega Aree Tematiche
-        </a>
-        <a class="path-btn active" href="#atlante-content" style="text-decoration: none;">
+        </button>
+        <button class="path-btn active">
           <span class="btn-icon">🌍</span> Atlante &amp; Monete
-        </a>
+        </button>
       </div>
     </div>
   </section>
