@@ -26,25 +26,66 @@
       }
     }
   </script>
+  <link href="style.css" rel="stylesheet" />
   <link href="atlante.css" rel="stylesheet" />
 </head>
 <body>
 
-  <!-- HEADER INTEGRATO HISTORIA CHRONOS -->
+  <!-- HEADER IDENTICO A INDEX.HTML -->
   <header class="main-header">
     <div class="header-container">
       <a href="index.html" class="brand-logo" style="text-decoration: none; color: inherit;">
-        <span>🏛️</span>
-        <span>Historia <span class="gold-text">Chronos</span></span>
+        <span class="logo-icon">🏛️</span>
+        <span class="logo-text">Historia <span class="gold-text">Chronos</span></span>
       </a>
-      <nav style="display: flex; align-items: center; gap: 20px;">
-        <a href="index.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.color='#d4af37'" onmouseout="this.style.color='#9ba1a6'">← Torna alla Home</a>
-        <span style="font-size: 0.9rem; color: var(--gold-primary); font-weight: 600;">Atlante &amp; Monete</span>
+      <nav class="desktop-nav">
+        <a class="nav-link" href="index.html#hero">Home</a>
+        <a class="nav-link active" href="#atlante-content">Esplora</a>
+        <a class="nav-link" href="index.html#ai-tutor">Chronos AI</a>
       </nav>
+      <button aria-label="Apri Menu" class="mobile-menu-btn" id="mobileMenuBtn" onclick="document.getElementById('mobileDrawer').classList.add('open')">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
-  <main class="main-container">
+  <!-- MOBILE DRAWER IDENTICO A INDEX.HTML -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="drawer-header">
+      <span class="logo-text">Historia <span class="gold-text">Chronos</span></span>
+      <button class="close-drawer" id="closeDrawer" onclick="document.getElementById('mobileDrawer').classList.remove('open')">×</button>
+    </div>
+    <nav class="mobile-nav">
+      <a class="mobile-link" href="index.html#hero">Home</a>
+      <a class="mobile-link" href="index.html#percorsi">Esplora Filoni</a>
+      <a class="mobile-link" href="index.html#ai-tutor">Chronos AI Tutor</a>
+    </nav>
+  </div>
+
+  <!-- HERO IDENTICA A INDEX.HTML CON "ATLANTE & MONETE" ATTIVO -->
+  <section class="hero-section" id="hero">
+    <div class="hero-content">
+      <div class="badge-gold">Piattaforma Multimediale di Storia</div>
+      <h1 class="hero-title">Vivi la Storia. <br/><span class="gold-gradient">Oltre il Semplice Studio.</span></h1>
+      <p class="hero-subtitle">
+        Dalle lezioni scolastiche ai grandi filoni trasversali: economia, tecnologia, geopolitica e test di verifica interattivi.
+      </p>
+      <div class="pathway-switcher">
+        <a class="path-btn" href="index.html#percorsi" style="text-decoration: none;">
+          <span class="btn-icon">📚</span> Programma Scolastico
+        </a>
+        <a class="path-btn" href="index.html#percorsi" style="text-decoration: none;">
+          <span class="btn-icon">🧭</span> Mega Aree Tematiche
+        </a>
+        <a class="path-btn active" href="#atlante-content" style="text-decoration: none;">
+          <span class="btn-icon">🌍</span> Atlante &amp; Monete
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTENUTO WORLD EXPLORER & MONETE -->
+  <main class="main-container" id="atlante-content" style="margin-top: 20px;">
 
     <!-- Due pulsanti principali in alto: Mondo / Monete -->
     <div class="top-mode-switch" id="topModeSwitch">
@@ -59,7 +100,7 @@
     <!-- VISTA 1: HOME CATALOGO NAZIONI -->
     <div id="homeNationView">
       <div style="text-align: center; margin-bottom: 40px;">
-        <h1 style="font-size: 2.2rem; margin-bottom: 10px;">World <span class="gold-text">Explorer</span></h1>
+        <h2 style="font-size: 2.2rem; margin-bottom: 10px;">World <span class="gold-text">Explorer</span></h2>
         <p style="color: var(--text-muted);">Atlante geopolitico, storico ed enciclopedico delle nazioni del mondo.</p>
       </div>
 
@@ -178,7 +219,7 @@
 
       <!-- 1. Blocco Superiore: Nome e Immagine di Copertina -->
       <div class="detail-hero-box">
-        <h1 id="detTitle" class="gold-text" style="font-size: 2rem; margin-bottom: 5px;">Nome Stato</h1>
+        <h2 id="detTitle" class="gold-text" style="font-size: 2rem; margin-bottom: 5px;">Nome Stato</h2>
         <p style="font-size: 0.9rem; color: var(--text-muted);" id="detSubtitle">Area Geografica</p>
         <img id="detCover" src="" alt="Copertina" class="detail-cover-large">
       </div>
