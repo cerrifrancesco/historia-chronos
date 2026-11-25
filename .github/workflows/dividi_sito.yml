@@ -1,5 +1,4 @@
-name: Dividi World Explorer
-
+name: Genera Atlante JS
 on:
   workflow_dispatch:
 
@@ -7,43 +6,30 @@ permissions:
   contents: write
 
 jobs:
-  split:
+  build-js:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Spezza il file in 3 parti
+      - name: Unisci dati nazioni e logica monete in atlante.js
         run: |
           python3 -c '
-          with open("_materiale_agente/World_Explorer_1_convertito.html", "r", encoding="utf-8") as f:
-              text = f.read()
+          with open("_materiale_agente/2_dati_nazioni.js", "r", encoding="utf-8") as f:
+              part1 = f.read()
+          with open("_materiale_agente/3_logica_monete.js", "r", encoding="utf-8") as f:
+              part2 = f.read()
 
-          # 1. Struttura HTML + CSS (tutto prima dello script finale)
-          idx_script = text.rfind("<script>")
-          html_part = text[:idx_script]
-          js_full = text[idx_script + 8 : text.rfind("</script>")]
+          # Pulisce eventuali tag <script> o </body> residui dai due file
+          for tag in ["<script>", "</script>", "</body>", "</html>"]:
+              part1 = part1.replace(tag, "")
+              part2 = part2.replace(tag, "")
 
-          # 2. Dati nazioni vs Logica & Monete
-          idx_logic = js_full.find("function applyNationFilters")
-          if idx_logic == -1:
-              idx_logic = len(js_full) // 2
-
-          dati_part = js_full[:idx_logic]
-          logica_part = js_full[idx_logic:]
-
-          with open("_materiale_agente/1_struttura.html", "w", encoding="utf-8") as f:
-              f.write(html_part)
-          with open("_materiale_agente/2_dati_nazioni.js", "w", encoding="utf-8") as f:
-              f.write(dati_part)
-          with open("_materiale_agente/3_logica_monete.js", "w", encoding="utf-8") as f:
-              f.write(logica_part)
+          with open("atlante.js", "w", encoding="utf-8") as out:
+              out.write(part1.strip() + "\n\n" + part2.strip() + "\n")
           '
-          rm _materiale_agente/World_Explorer_1_convertito.html
-
-      - name: Salva i 3 file su GitHub
+      - name: Commit atlante.js
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add _materiale_agente/
-          git commit -m "Diviso World Explorer in 3 file leggeri"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add atlante.js
+          git commit -m "Creato atlante.js da 2_dati_nazioni e 3_logica_monete" || exit 0
           git push
