@@ -9770,5 +9770,16 @@ NON FUNZIONA ANCORA IN FASE DI SVILUPPO
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b58b7e4bc1f94744a6c07990317482ba"}'></script><!-- End Cloudflare Web Analytics -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "mega") {
+      const btnMega = document.getElementById("btnMegaAree");
+      if (btnMega) {
+        btnMega.click();
+      }
+    }
+  });
+</script>
 </body>
 </html>
