@@ -9745,25 +9745,45 @@ Hai presente quando ascolti un dibattito economico o leggi un articolo di giorna
 </div>
 <!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->
 <section class="ai-tutor-section" id="ai-tutor">
-<div class="tutor-card">
-<div class="tutor-header">
-<div class="tutor-avatar">🤖</div>
-<div>
-<h3>Chronos AI <span class="gold-text">Tutor Storico</span></h3>
-<p>Hai domande su questa epoca o vuoi chiarire un concetto?</p>
-</div>
-</div>
-<div class="tutor-chat-body" id="chatBody">
-<div class="chat-msg ai-msg">
-            Ciao! Sono il tuo assistente Chronos. Chiedimi pure qualsiasi chiarimento o approfondimento sulle lezioni!
-NON FUNZIONA ANCORA IN FASE DI SVILUPPO
-          </div>
-</div>
-<div class="tutor-quick-actions">
-<button class="quick-btn" onclick="sendQuickPrompt('Spiegamelo meglio')">💡 Spiegamelo meglio</button>
-<button class="quick-btn" onclick="sendQuickPrompt('Fammi una domanda su Atene')">📝 Interrogami</button>
-</div>
-</div>
+  <div class="tutor-card">
+    <div class="tutor-header">
+      <div class="tutor-avatar">🤖</div>
+      <div>
+        <h3>Chronos AI <span class="gold-text">Tutor Storico</span></h3>
+        <p>Hai domande su un'epoca, un evento o un personaggio storico?</p>
+      </div>
+    </div>
+
+    <div class="tutor-chat-body" id="chatBody">
+      <div class="chat-msg ai-msg">
+        Ciao! Sono <strong>Chronos AI</strong>, il tuo tutor storico. Chiedimi qualsiasi chiarimento, approfondimento o domanda di ripasso sulle epoche storiche!
+      </div>
+    </div>
+
+    <!-- Barra di invio messaggio -->
+    <form id="aiChatForm" onsubmit="handleChatSubmit(event)" style="display: flex; gap: 10px; margin-top: 14px; margin-bottom: 12px;">
+      <input
+        type="text"
+        id="aiChatInput"
+        maxlength="450"
+        placeholder="Scrivi una domanda di storia (es. Perché cadde l'Impero Romano d'Occidente?)..."
+        style="flex: 1; background: #121418; border: 1px solid rgba(212, 175, 55, 0.35); color: #f5f6f8; padding: 12px 16px; border-radius: 10px; font-size: 0.95rem; outline: none;"
+        required
+      />
+      <button
+        type="submit"
+        id="aiSendBtn"
+        style="background: #d4af37; color: #121418; font-weight: 700; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; transition: opacity 0.2s;"
+      >
+        Invia ➤
+      </button>
+    </form>
+
+    <div class="tutor-quick-actions">
+      <button type="button" class="quick-btn" onclick="sendQuickPrompt('Spiegami in modo semplice le cause principali della Prima Guerra Mondiale')">💡 Spiegamelo meglio</button>
+      <button type="button" class="quick-btn" onclick="sendQuickPrompt('Fammi una domanda di verifica sulla storia di Atene o Roma antica')">📝 Interrogami</button>
+    </div>
+  </div>
 </section>
 </main>
 <!-- JAVASCRIPT LOGIC -->
