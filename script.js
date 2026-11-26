@@ -317,31 +317,25 @@ function showHome() {
   showView('view-home');
 }
 
-// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + PULISCI + MARKDOWN) ===
+// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + PULISCI + MARKDOWN + SCHEMA FLASH) ===
 const CHRONOS_AI_WORKER_URL = "https://chronos-ai-worker.cerrifrancesco85.workers.dev";
 let chronosChatHistory = [];
 let isChronosGenerating = false;
 
-// Formattazione Markdown pulita (grassetto, corsivo, elenchi puntati e a capo)
 function formatChronosMarkdown(text) {
   let html = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-  // Grassetto **testo**
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  // Corsivo *testo*
   html = html.replace(/(^|[^*])\*([^*]+?)\*(?!\*)/g, "$1<em>$2</em>");
-  // Elenchi puntati (- elemento o * elemento a inizio riga)
   html = html.replace(/^\s*[-*]\s+(.+)$/gm, "• $1");
-  // A capo
   html = html.replace(/\n/g, "<br>");
 
   return html;
 }
 
-// Pulisce la chat e ripristina il messaggio di benvenuto
 function clearChronosChat() {
   if (isChronosGenerating) return;
   chronosChatHistory = [];
@@ -353,19 +347,18 @@ function clearChronosChat() {
     const lessonTitle = lessonPane.querySelector(".hero-title")?.textContent?.trim() || "questa lezione";
     chatBody.innerHTML = `
       <div class="chat-msg ai-msg">
-        Chat azzerata! Sono pronto per nuove domande o verifiche su <strong>${lessonTitle}</strong>.
+        Chat azzerata! Sono pronto per nuove domande, schemi flash o verifiche su <strong>${lessonTitle}</strong>.
       </div>
     `;
   } else {
     chatBody.innerHTML = `
       <div class="chat-msg ai-msg">
-        Chat azzerata! Sono <strong>Chronos AI</strong>, il tuo tutor storico. Chiedimi qualsiasi chiarimento o domanda di ripasso!
+        Chat azzerata! Sono <strong>Chronos AI</strong>, il tuo tutor storico. Chiedimi qualsiasi chiarimento, schema o domanda di ripasso!
       </div>
     `;
   }
 }
 
-// 1. Inserisce automaticamente Chronos AI in fondo a tutte le pagine delle lezioni (lezioni/*.html)
 document.addEventListener("DOMContentLoaded", () => {
   const lessonPane = document.querySelector(".lezione-content-pane");
   if (lessonPane && !document.getElementById("ai-tutor")) {
@@ -395,7 +388,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="tutor-chat-body" id="chatBody">
           <div class="chat-msg ai-msg">
-            Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento semplice oppure <strong>Interrogami</strong> per verificare ciò che hai studiato!
+            Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento semplice, <strong>Schema flash</strong> per la sintesi causa-effetto oppure <strong>Interrogami</strong> per metterti alla prova!
           </div>
         </div>
         <form id="aiChatForm" onsubmit="handleChatSubmit(event)" style="display: flex; gap: 10px; margin-top: 14px; margin-bottom: 12px;">
@@ -417,6 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </form>
         <div class="tutor-quick-actions">
           <button type="button" class="quick-btn" onclick="triggerSmartAction('explain')">💡 Spiegamelo meglio</button>
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('schema')">🗺️ Schema flash</button>
           <button type="button" class="quick-btn" onclick="triggerSmartAction('quiz')">📝 Interrogami</button>
         </div>
       </div>
@@ -425,7 +419,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// 2. Rileva automaticamente in che punto del sito si trova l'utente
 function getChronosPageContext() {
   const lessonPane = document.querySelector(".lezione-content-pane");
   if (lessonPane && lessonPane.style.display !== "none") {
@@ -491,6 +484,8 @@ function triggerSmartAction(mode) {
   if (isChronosGenerating) return;
   if (mode === "explain") {
     sendQuickPrompt("Spiegamelo meglio");
+  } else if (mode === "schema") {
+    sendQuickPrompt("Schema flash");
   } else if (mode === "quiz") {
     sendQuickPrompt("Interrogami");
   }
