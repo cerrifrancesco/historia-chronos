@@ -6,7 +6,7 @@ const HISTORICAL_STAGES = [
     title: "Prime Civiltà Fluviali (Mesopotamia ed Egitto)",
     era: "antica",
     eraLabel: "Età Antica",
-    center: [36, 30],
+    center: [36, 29],
     zoom: 3.4,
     lessonUrl: "lezioni/1.1.html",
     lessonText: "📖 Vai alla Lezione 1.1",
@@ -17,7 +17,7 @@ const HISTORICAL_STAGES = [
     ],
     markers: [
       { name: "Ur e Uruk (Sumeri)", coords: [45.6, 31.3], info: "Culla della scrittura cuneiforme e delle Ziggurat" },
-      { name: "Menfi e Tebe (Egitto)", coords: [31.2, 29.8], info: "Centro del Regno dei Faraoni lungo il Nilo" }
+      { name: "Menfi e Tebe (Egitto)", coords: [31.5, 26.8], info: "Centro del Regno dei Faraoni lungo il Nilo" }
     ]
   },
   {
@@ -239,6 +239,7 @@ let d3Path = null;
 let d3Zoom = null;
 let countriesLayer = null;
 let markersLayer = null;
+let currentZoomK = 1;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("historicalMapCanvas");
@@ -266,7 +267,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   d3Zoom = d3.zoom()
     .scaleExtent([1, 8])
     .on("zoom", (event) => {
+      currentZoomK = event.transform.k || 1;
       mapGroup.attr("transform", event.transform);
+
+      countriesLayer.selectAll("path").attr("stroke-width", 0.6 / currentZoomK);
+      markersLayer.selectAll("g.hist-marker").attr("transform", d => {
+        const [x, y] = d3Projection(d.coords);
+        return `translate(${x}, ${y}) scale(${1 / currentZoomK})`;
+      });
     });
 
   d3Svg.call(d3Zoom);
@@ -341,7 +349,6 @@ function selectTimelineIndex(idx) {
     lessonLink.textContent = stage.lessonText;
   }
 
-  // Aggiorna legenda
   const legendEl = document.getElementById("timelineLegend");
   if (legendEl) {
     legendEl.innerHTML = stage.regions.map(r => `
@@ -358,7 +365,6 @@ function selectTimelineIndex(idx) {
 function updateMapVisuals(stage) {
   if (!countriesLayer || !markersLayer || !d3Projection) return;
 
-  // Mappa ID paese -> colore e nome impero
   const regionLookup = new Map();
   stage.regions.forEach(reg => {
     reg.ids.forEach(id => regionLookup.set(String(id).padStart(3, "0"), reg));
@@ -391,7 +397,12 @@ function updateMapVisuals(stage) {
       if (tooltip) tooltip.style.display = "none";
     });
 
-  // Aggiorna marcatori eventi/capitali
+  const container = document.getElementById("historicalMapCanvas");
+  const w = container.clientWidth || 900;
+  const h = container.clientHeight || 460;
+  const [cx, cy] = d3Projection(stage.center);
+  const k = stage.zoom || 2.5;
+
   markersLayer.selectAll("*").remove();
 
   const markerGroups = markersLayer.selectAll("g.hist-marker")
@@ -401,24 +412,24 @@ function updateMapVisuals(stage) {
     .attr("class", "hist-marker")
     .attr("transform", d => {
       const [x, y] = d3Projection(d.coords);
-      return `translate(${x}, ${y})`;
+      return `translate(${x}, ${y}) scale(${1 / k})`;
     })
     .style("cursor", "pointer");
 
   markerGroups.append("circle")
-    .attr("r", 6)
+    .attr("r", 5.5)
     .attr("fill", "#f3e5ab")
     .attr("stroke", "#121418")
-    .attr("stroke-width", 2);
+    .attr("stroke-width", 1.8);
 
   markerGroups.append("text")
     .attr("x", 9)
     .attr("y", 4)
     .text(d => d.name)
     .attr("fill", "#f5f6f8")
-    .attr("font-size", "11px")
+    .attr("font-size", "12px")
     .attr("font-weight", "600")
-    .style("text-shadow", "0 1px 4px #000");
+    .style("text-shadow", "0 1px 4px #000, 0 0 8px rgba(0,0,0,0.9)");
 
   markerGroups.on("mousemove", (event, d) => {
     if (!tooltip) return;
@@ -429,13 +440,6 @@ function updateMapVisuals(stage) {
   }).on("mouseleave", () => {
     if (tooltip) tooltip.style.display = "none";
   });
-
-  // Zoom animato fluido verso l'area protagonista dell'epoca
-  const container = document.getElementById("historicalMapCanvas");
-  const w = container.clientWidth || 900;
-  const h = container.clientHeight || 460;
-  const [cx, cy] = d3Projection(stage.center);
-  const k = stage.zoom || 2.5;
 
   d3Svg.transition()
     .duration(850)
