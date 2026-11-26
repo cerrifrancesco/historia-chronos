@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initPathwaySwitcher();
+  initSmartBackNavigation();
 });
 
 function initNavigation() {
@@ -35,27 +36,96 @@ function initPathwaySwitcher() {
     if (mobileNavMappe) mobileNavMappe.style.display = isProgrammaActive ? '' : 'none';
   }
 
-  // Controllo iniziale al caricamento pagina
   updateMappeNavVisibility();
 
   if (btnMegaAree && btnProgramma && viewMegaAree && viewProgramma) {
     btnMegaAree.addEventListener('click', () => {
       btnMegaAree.classList.add('active');
       btnProgramma.classList.remove('active');
-      document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
+      document.querySelectorAll('.view-screen').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      });
       viewMegaAree.classList.add('active');
       viewProgramma.classList.remove('active');
       updateMappeNavVisibility();
     });
+
     btnProgramma.addEventListener('click', () => {
       btnProgramma.classList.add('active');
       btnMegaAree.classList.remove('active');
-      document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
+      document.querySelectorAll('.view-screen').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      });
       viewProgramma.classList.add('active');
       viewMegaAree.classList.remove('active');
       updateMappeNavVisibility();
     });
   }
+}
+
+// === NAVIGAZIONE DI RITORNO INTELLIGENTE PER EPOCA ===
+function detectEraFromLessonContext() {
+  const params = new URLSearchParams(window.location.search);
+  const queryEpoca = params.get('epoca');
+  if (queryEpoca && ['antica', 'medievale', 'moderna', 'contemporanea'].includes(queryEpoca)) {
+    return queryEpoca;
+  }
+
+  const pane = document.querySelector('.lezione-content-pane');
+  const rawId = pane?.id || window.location.pathname || '';
+  const match = rawId.match(/lez-(\d+)-(\d+)/) || rawId.match(/(\d+)\.(\d+)/);
+
+  if (match) {
+    const macroNum = match[1];
+    if (macroNum === '1') return 'antica';
+    if (macroNum === '2') return 'medievale';
+    if (macroNum === '3') return 'moderna';
+    if (macroNum === '4') return 'contemporanea';
+  }
+
+  const badgeText = (pane?.querySelector('.badge-gold')?.textContent || '').toLowerCase();
+  if (badgeText.includes('medievale')) return 'medievale';
+  if (badgeText.includes('moderna')) return 'moderna';
+  if (badgeText.includes('contemporanea')) return 'contemporanea';
+  if (badgeText.includes('antica')) return 'antica';
+
+  try {
+    const saved = sessionStorage.getItem('chronos_return_epoca');
+    if (saved && ['antica', 'medievale', 'moderna', 'contemporanea'].includes(saved)) {
+      return saved;
+    }
+  } catch (_) {}
+
+  return 'antica';
+}
+
+function initSmartBackNavigation() {
+  const isInLessonPage = window.location.pathname.includes('/lezioni/') || Boolean(document.querySelector('.lezione-content-pane'));
+  if (!isInLessonPage) return;
+
+  const targetEpoca = detectEraFromLessonContext();
+  const returnHref = `../index.html?epoca=${targetEpoca}#percorsi`;
+
+  try {
+    sessionStorage.setItem('chronos_return_epoca', targetEpoca);
+  } catch (_) {}
+
+  const backElements = document.querySelectorAll('.back-to-grid-btn, a[href*="index.html"]');
+  backElements.forEach(el => {
+    if (el.classList.contains('brand-logo')) return;
+
+    if (el.tagName === 'A') {
+      el.setAttribute('href', returnHref);
+    } else if (el.tagName === 'BUTTON') {
+      el.setAttribute('onclick', '');
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = returnHref;
+      });
+    }
+  });
 }
 
 const quizDatabase = {
@@ -201,18 +271,30 @@ function resetQuiz(containerId, lezioneNum, btnElement) {
 let epocaAttivaId = 'grid-antica';
 
 function switchEpoca(epoca, btn) {
+  if (!['antica', 'medievale', 'moderna', 'contemporanea'].includes(epoca)) {
+    epoca = 'antica';
+  }
   epocaAttivaId = 'grid-' + epoca;
 
-  if (btn) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
+  try {
+    sessionStorage.setItem('chronos_return_epoca', epoca);
+  } catch (_) {}
+
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const isMatch = b === btn || (b.getAttribute('onclick') || '').includes(`switchEpoca('${epoca}'`);
+    b.classList.toggle('active', isMatch);
+  });
+
+  const viewProgramma = document.getElementById('viewProgramma');
+  const viewMegaAree = document.getElementById('viewMegaAree');
+  if (viewProgramma) viewProgramma.classList.add('active');
+  if (viewMegaAree) viewMegaAree.classList.remove('active');
 
   const gridContainer = document.getElementById('epocheGridsContainer');
   if (gridContainer) gridContainer.style.display = 'block';
 
   document.querySelectorAll('.epoche-grid-view').forEach(grid => {
-    grid.style.display = 'none';
+    grid.style.display = grid.id === epocaAttivaId ? 'block' : 'none';
   });
 
   document.querySelectorAll('.lezione-content-pane').forEach(pane => {
@@ -221,15 +303,21 @@ function switchEpoca(epoca, btn) {
 
   const detailContainer = document.getElementById('lezioneDetailContainer');
   if (detailContainer) detailContainer.style.display = 'none';
-
-  const targetGrid = document.getElementById(epocaAttivaId);
-  if (targetGrid) {
-    targetGrid.style.display = 'block';
-  }
 }
 
 function openLezioneDetail(lezioneId) {
-  window.location.href = 'lezioni/' + lezioneId + '.html';
+  const match = String(lezioneId).match(/lez-(\d+)-(\d+)/);
+  let epoca = 'antica';
+  if (match) {
+    if (match[1] === '2') epoca = 'medievale';
+    else if (match[1] === '3') epoca = 'moderna';
+    else if (match[1] === '4') epoca = 'contemporanea';
+  }
+  try {
+    sessionStorage.setItem('chronos_return_epoca', epoca);
+  } catch (_) {}
+
+  window.location.href = `lezioni/${lezioneId}.html?epoca=${epoca}`;
 }
 
 function closeLezioneDetail() {
@@ -248,11 +336,7 @@ function closeLezioneDetail() {
   }
 
   document.querySelectorAll('.epoche-grid-view').forEach(grid => {
-    if (grid.id === epocaAttivaId) {
-      grid.style.display = 'block';
-    } else {
-      grid.style.display = 'none';
-    }
+    grid.style.display = grid.id === epocaAttivaId ? 'block' : 'none';
   });
 }
 
@@ -331,7 +415,7 @@ function showHome() {
   showView('view-home');
 }
 
-// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + MODALE FULL-SCREEN + PULISCI + MARKDOWN + GLOSSARIO SELEZIONE) ===
+// === CHRONOS AI TUTOR ===
 const CHRONOS_AI_WORKER_URL = "https://chronos-ai-worker.cerrifrancesco85.workers.dev";
 let chronosChatHistory = [];
 let isChronosGenerating = false;
@@ -424,7 +508,6 @@ function initChronosFullModal() {
 
   modal.innerHTML = `
     <div style="width: 100%; max-width: 1120px; height: 88vh; background: #161920; border: 1px solid rgba(212, 175, 55, 0.45); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.75); display: flex; flex-direction: column; overflow: hidden;">
-      <!-- Header Modale -->
       <div style="padding: 16px 22px; background: #111318; border-bottom: 1px solid rgba(212, 175, 55, 0.25); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <div class="tutor-avatar" style="width: 42px; height: 42px; font-size: 1.3rem;">🤖</div>
@@ -434,48 +517,17 @@ function initChronosFullModal() {
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button
-            type="button"
-            onclick="clearChronosChat()"
-            style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 7px 13px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;"
-          >
-            🗑️ Pulisci
-          </button>
-          <button
-            type="button"
-            onclick="closeChronosModal()"
-            style="background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5; padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer;"
-          >
-            ✕ Chiudi
-          </button>
+          <button type="button" onclick="clearChronosChat()" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 7px 13px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;">🗑️ Pulisci</button>
+          <button type="button" onclick="closeChronosModal()" style="background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5; padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer;">✕ Chiudi</button>
         </div>
       </div>
 
-      <!-- Area Messaggi Espansa -->
-      <div
-        id="modalChatBody"
-        class="tutor-chat-body"
-        style="flex: 1; max-height: none; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; font-size: 1rem; line-height: 1.65;"
-      ></div>
+      <div id="modalChatBody" class="tutor-chat-body" style="flex: 1; max-height: none; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; font-size: 1rem; line-height: 1.65;"></div>
 
-      <!-- Barra Input + Pulsanti Rapidi -->
       <div style="padding: 14px 22px 18px; background: #111318; border-top: 1px solid rgba(212, 175, 55, 0.25);">
         <form id="modalAiChatForm" onsubmit="handleChatSubmit(event, true)" style="display: flex; gap: 10px; margin-bottom: 12px;">
-          <input
-            type="text"
-            id="modalAiChatInput"
-            maxlength="450"
-            placeholder="Scrivi qui la tua domanda di storia, rispondi all'interrogazione o chiedi un approfondimento..."
-            style="flex: 1; background: #181b23; border: 1px solid rgba(212, 175, 55, 0.4); color: #f5f6f8; padding: 13px 16px; border-radius: 10px; font-size: 0.98rem; outline: none;"
-            required
-          />
-          <button
-            type="submit"
-            id="modalAiSendBtn"
-            style="background: #d4af37; color: #121418; font-weight: 700; border: none; padding: 0 24px; border-radius: 10px; font-size: 0.95rem; cursor: pointer;"
-          >
-            Invia ➤
-          </button>
+          <input type="text" id="modalAiChatInput" maxlength="450" placeholder="Scrivi qui la tua domanda di storia, rispondi all'interrogazione o chiedi un approfondimento..." style="flex: 1; background: #181b23; border: 1px solid rgba(212, 175, 55, 0.4); color: #f5f6f8; padding: 13px 16px; border-radius: 10px; font-size: 0.98rem; outline: none;" required />
+          <button type="submit" id="modalAiSendBtn" style="background: #d4af37; color: #121418; font-weight: 700; border: none; padding: 0 24px; border-radius: 10px; font-size: 0.95rem; cursor: pointer;">Invia ➤</button>
         </form>
         <div class="tutor-quick-actions" style="margin-top: 0;">
           <button type="button" class="quick-btn" onclick="triggerSmartAction('explain', true)">💡 Spiegamelo meglio</button>
@@ -540,45 +592,16 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <button
-              type="button"
-              onclick="openChronosModal()"
-              title="Apri a schermo intero"
-              style="background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.45); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;"
-            >
-              ⛶ Espandi
-            </button>
-            <button
-              type="button"
-              onclick="clearChronosChat()"
-              title="Inizia una nuova conversazione"
-              style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;"
-            >
-              🗑️ Pulisci
-            </button>
+            <button type="button" onclick="openChronosModal()" title="Apri a schermo intero" style="background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.45); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;">⛶ Espandi</button>
+            <button type="button" onclick="clearChronosChat()" title="Inizia una nuova conversazione" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;">🗑️ Pulisci</button>
           </div>
         </div>
         <div class="tutor-chat-body" id="chatBody">
-          <div class="chat-msg ai-msg">
-            ${getChronosWelcomeHtml()}
-          </div>
+          <div class="chat-msg ai-msg">${getChronosWelcomeHtml()}</div>
         </div>
         <form id="aiChatForm" onsubmit="handleChatSubmit(event, false)" style="display: flex; gap: 10px; margin-top: 14px; margin-bottom: 12px;">
-          <input
-            type="text"
-            id="aiChatInput"
-            maxlength="450"
-            placeholder="Fai una domanda su questa lezione o scrivi 'interrogami'..."
-            style="flex: 1; background: #121418; border: 1px solid rgba(212, 175, 55, 0.35); color: #f5f6f8; padding: 12px 16px; border-radius: 10px; font-size: 0.95rem; outline: none;"
-            required
-          />
-          <button
-            type="submit"
-            id="aiSendBtn"
-            style="background: #d4af37; color: #121418; font-weight: 700; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; transition: opacity 0.2s;"
-          >
-            Invia ➤
-          </button>
+          <input type="text" id="aiChatInput" maxlength="450" placeholder="Fai una domanda su questa lezione o scrivi 'interrogami'..." style="flex: 1; background: #121418; border: 1px solid rgba(212, 175, 55, 0.35); color: #f5f6f8; padding: 12px 16px; border-radius: 10px; font-size: 0.95rem; outline: none;" required />
+          <button type="submit" id="aiSendBtn" style="background: #d4af37; color: #121418; font-weight: 700; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; transition: opacity 0.2s;">Invia ➤</button>
         </form>
         <div class="tutor-quick-actions">
           <button type="button" class="quick-btn" onclick="triggerSmartAction('explain', false)">💡 Spiegamelo meglio</button>
@@ -593,7 +616,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initChronosFullModal();
   initSelectionGlossaryPopup();
 
-  // Gestione apertura automatica lezione o epoca arrivando da Mappe Storiche (?lezione=1.1 o ?epoca=medievale)
+  // Apertura automatica epoca o lezione da query string o sessionStorage
   const params = new URLSearchParams(window.location.search);
   const lezioneParam = params.get("lezione");
   const epocaParam = params.get("epoca");
@@ -608,19 +631,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (card) card.click();
       }
     }, 100);
-  } else if (epocaParam) {
+  } else if (epocaParam && ['antica', 'medievale', 'moderna', 'contemporanea'].includes(epocaParam)) {
     setTimeout(() => {
-      const btn = document.querySelector(`[onclick*="switchEpoca('${epocaParam}'"]`);
-      if (typeof switchEpoca === "function" && btn) {
-        switchEpoca(epocaParam, btn);
-      } else if (btn) {
-        btn.click();
-      }
+      switchEpoca(epocaParam);
     }, 100);
+  } else if (!window.location.pathname.includes('/lezioni/') && !document.querySelector('.lezione-content-pane')) {
+    try {
+      const savedEpoca = sessionStorage.getItem('chronos_return_epoca');
+      if (savedEpoca && ['antica', 'medievale', 'moderna', 'contemporanea'].includes(savedEpoca)) {
+        setTimeout(() => switchEpoca(savedEpoca), 100);
+      }
+    } catch (_) {}
   }
 });
 
-// Glossario rapido al doppio clic o selezione testo (attivo su Lezioni Scolastiche E Mega Aree Tematiche)
 function initSelectionGlossaryPopup() {
   const popupBtn = document.createElement("button");
   popupBtn.id = "chronosSelectionPopup";
