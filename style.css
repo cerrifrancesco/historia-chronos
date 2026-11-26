@@ -474,3 +474,45 @@
   flex-shrink: 0;
   line-height: 1.2;
 }
+/* === BOTTONI PULISCI E ESPANDI VICINI IN CHRONOS AI === */
+#ai-tutor .tutor-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+#ai-tutor .tutor-header > div:last-child,
+#ai-tutor .tutor-header .tutor-actions,
+#ai-tutor .tutor-header [onclick*="openChronosModal"] {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+#ai-tutor .tutor-header button[onclick*="clearChronosChat"],
+#ai-tutor .tutor-header button[onclick*="openChronosModal"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+#ai-tutor .tutor-header {
+  flex-wrap: nowrap !important;
+}
+
+#ai-tutor .tutor-header > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#ai-tutor .tutor-header > div:last-child {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+}
+
