@@ -859,32 +859,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const epocaParam = params.get("epoca");
 
   if (lezioneParam) {
+    // Trasforma "1.1" in "lez-1-1" e chiama direttamente openLezioneDetail
+    const lezId = "lez-" + lezioneParam.replace(/\./g, "-");
     setTimeout(() => {
-      // Cerca la card della lezione corrispondente (es. "Lezione 1.1") e simula il clic su "Apri Lezione"
-      const cards = Array.from(document.querySelectorAll(".lesson-card, .card, article, div"));
-      const targetCard = cards.find(el => {
-        const badge = el.querySelector(".badge-gold, .lesson-num, span, h4");
-        return badge && badge.textContent.trim() === `Lezione ${lezioneParam}`;
-      });
-      const openBtn = targetCard?.querySelector("a, button");
-      if (openBtn) {
-        openBtn.click();
+      if (typeof openLezioneDetail === "function") {
+        openLezioneDetail(lezId);
+      } else {
+        const card = document.querySelector(`[onclick*="openLezioneDetail('${lezId}')"]`);
+        if (card) card.click();
       }
-    }, 150);
+    }, 100);
   } else if (epocaParam) {
     setTimeout(() => {
-      const epocaTabMap = {
-        antica: "grid-antica",
-        medievale: "grid-medievale",
-        moderna: "grid-moderna",
-        contemporanea: "grid-contemporanea"
-      };
-      const targetGridId = epocaTabMap[epocaParam];
-      if (targetGridId) {
-        const eraBtn = document.querySelector(`[onclick*="${targetGridId}"]`);
-        if (eraBtn) eraBtn.click();
+      const btn = document.querySelector(`[onclick*="switchEpoca('${epocaParam}'"]`);
+      if (typeof switchEpoca === "function" && btn) {
+        switchEpoca(epocaParam, btn);
+      } else if (btn) {
+        btn.click();
       }
-    }, 150);
+    }, 100);
   }
 });
+
 
