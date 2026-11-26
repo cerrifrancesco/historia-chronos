@@ -317,7 +317,7 @@ function showHome() {
   showView('view-home');
 }
 
-// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + PULISCI + MARKDOWN + SCHEMA FLASH) ===
+// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + PULISCI + MARKDOWN + SCHEMA FLASH + GLOSSARIO DOPPIO CLIC) ===
 const CHRONOS_AI_WORKER_URL = "https://chronos-ai-worker.cerrifrancesco85.workers.dev";
 let chronosChatHistory = [];
 let isChronosGenerating = false;
@@ -359,6 +359,7 @@ function clearChronosChat() {
   }
 }
 
+// Inizializza Chronos AI nelle lezioni + pulsante fluttuante al doppio clic/selezione testo
 document.addEventListener("DOMContentLoaded", () => {
   const lessonPane = document.querySelector(".lezione-content-pane");
   if (lessonPane && !document.getElementById("ai-tutor")) {
@@ -388,7 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="tutor-chat-body" id="chatBody">
           <div class="chat-msg ai-msg">
-            Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento semplice, <strong>Schema flash</strong> per la sintesi causa-effetto oppure <strong>Interrogami</strong> per metterti alla prova!
+            Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento, <strong>Schema flash</strong> per la sintesi o <strong>Interrogami</strong> per un'interrogazione con voto! <em>(Suggerimento: fai doppio clic su qualsiasi parola del testo per chiedermene il significato).</em>
           </div>
         </div>
         <form id="aiChatForm" onsubmit="handleChatSubmit(event)" style="display: flex; gap: 10px; margin-top: 14px; margin-bottom: 12px;">
@@ -417,7 +418,62 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     lessonPane.appendChild(tutorSection);
   }
+
+  initSelectionGlossaryPopup();
 });
+
+function initSelectionGlossaryPopup() {
+  const popupBtn = document.createElement("button");
+  popupBtn.id = "chronosSelectionPopup";
+  popupBtn.type = "button";
+  popupBtn.style.cssText = "position: fixed; z-index: 9999; display: none; background: #1a1d24; color: #f3e5ab; border: 1px solid #d4af37; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,0.6); cursor: pointer; transition: transform 0.15s;";
+  document.body.appendChild(popupBtn);
+
+  let selectedTerm = "";
+
+  function checkSelection() {
+    const lessonPane = document.querySelector(".lezione-content-pane");
+    if (!lessonPane) return;
+
+    const selection = window.getSelection();
+    const text = selection ? selection.toString().trim() : "";
+
+    // Mostra il pulsante solo se la selezione è dentro il testo della lezione (non dentro la chat stessa)
+    if (
+      text.length >= 3 &&
+      text.length <= 60 &&
+      selection.rangeCount > 0 &&
+      lessonPane.contains(selection.anchorNode) &&
+      !document.getElementById("ai-tutor")?.contains(selection.anchorNode)
+    ) {
+      const rect = selection.getRangeAt(0).getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        selectedTerm = text;
+        popupBtn.textContent = `🔍 Chiedi a Chronos: "${text.length > 22 ? text.slice(0, 22) + "..." : text}"`;
+        popupBtn.style.left = `${Math.min(window.innerWidth - 240, Math.max(12, rect.left))}px`;
+        popupBtn.style.top = `${Math.max(12, rect.top - 44)}px`;
+        popupBtn.style.display = "block";
+        return;
+      }
+    }
+    popupBtn.style.display = "none";
+  }
+
+  document.addEventListener("mouseup", () => setTimeout(checkSelection, 20));
+  document.addEventListener("touchend", () => setTimeout(checkSelection, 50));
+
+  popupBtn.addEventListener("click", () => {
+    if (!selectedTerm) return;
+    popupBtn.style.display = "none";
+    window.getSelection()?.removeAllRanges();
+
+    const tutorEl = document.getElementById("ai-tutor");
+    if (tutorEl) {
+      tutorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    sendQuickPrompt(`Spiegami brevemente il significato storico di "${selectedTerm}" nel contesto di questa lezione.`);
+  });
+}
 
 function getChronosPageContext() {
   const lessonPane = document.querySelector(".lezione-content-pane");
