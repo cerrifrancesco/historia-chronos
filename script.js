@@ -317,10 +317,119 @@ function showHome() {
   showView('view-home');
 }
 
-// === CHRONOS AI TUTOR (STREAMING + ISOLAMENTO PER UTENTE) ===
+// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA) ===
 const CHRONOS_AI_WORKER_URL = "https://chronos-ai-worker.cerrifrancesco85.workers.dev";
 let chronosChatHistory = [];
 let isChronosGenerating = false;
+
+// 1. Inserisce automaticamente Chronos AI in fondo a tutte le pagine delle lezioni (lezioni/*.html)
+document.addEventListener("DOMContentLoaded", () => {
+  const lessonPane = document.querySelector(".lezione-content-pane");
+  if (lessonPane && !document.getElementById("ai-tutor")) {
+    const lessonTitle = lessonPane.querySelector(".hero-title")?.textContent?.trim() || "questa lezione";
+    const tutorSection = document.createElement("section");
+    tutorSection.className = "ai-tutor-section";
+    tutorSection.id = "ai-tutor";
+    tutorSection.style.marginTop = "40px";
+    tutorSection.innerHTML = `
+      <div class="tutor-card">
+        <div class="tutor-header">
+          <div class="tutor-avatar">🤖</div>
+          <div>
+            <h3>Chronos AI <span class="gold-text">Tutor Storico</span></h3>
+            <p>Hai dubbi su <strong>${lessonTitle}</strong>? Chiedi pure o mettiti alla prova!</p>
+          </div>
+        </div>
+        <div class="tutor-chat-body" id="chatBody">
+          <div class="chat-msg ai-msg">
+            Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento semplice oppure <strong>Interrogami</strong> per verificare ciò che hai studiato!
+          </div>
+        </div>
+        <form id="aiChatForm" onsubmit="handleChatSubmit(event)" style="display: flex; gap: 10px; margin-top: 14px; margin-bottom: 12px;">
+          <input
+            type="text"
+            id="aiChatInput"
+            maxlength="450"
+            placeholder="Fai una domanda su questa lezione o scrivi 'interrogami'..."
+            style="flex: 1; background: #121418; border: 1px solid rgba(212, 175, 55, 0.35); color: #f5f6f8; padding: 12px 16px; border-radius: 10px; font-size: 0.95rem; outline: none;"
+            required
+          />
+          <button
+            type="submit"
+            id="aiSendBtn"
+            style="background: #d4af37; color: #121418; font-weight: 700; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; transition: opacity 0.2s;"
+          >
+            Invia ➤
+          </button>
+        </form>
+        <div class="tutor-quick-actions">
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('explain')">💡 Spiegamelo meglio</button>
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('quiz')">📝 Interrogami</button>
+        </div>
+      </div>
+    `;
+    lessonPane.appendChild(tutorSection);
+  }
+});
+
+// 2. Rileva automaticamente in che punto del sito si trova l'utente
+function getChronosPageContext() {
+  // Caso A: L'utente è dentro una pagina di lezione (es. lezioni/1.1.html)
+  const lessonPane = document.querySelector(".lezione-content-pane");
+  if (lessonPane && lessonPane.style.display !== "none") {
+    const title = lessonPane.querySelector(".hero-title")?.textContent?.trim() || "";
+    const badge = lessonPane.querySelector(".badge-gold")?.textContent?.trim() || "";
+    const paragraphs = Array.from(lessonPane.querySelectorAll("p, li"))
+      .map(el => el.textContent.trim())
+      .filter(t => t.length > 15 && !t.startsWith("A)") && !t.startsWith("B)") && !t.startsWith("C)") && !t.startsWith("D)"))
+      .slice(0, 14)
+      .join("\n");
+
+    return {
+      type: "lesson",
+      title,
+      badge,
+      summary: paragraphs
+    };
+  }
+
+  // Caso B: L'utente ha aperto una delle 5 Macroaree in index.html
+  const macroareaMap = {
+    "view-home": "Economia, Commercio e Lavoro",
+    "view-guerre-home": "Guerre, Imperi e Geopolitica",
+    "view-potere-home": "Potere, Istituzioni e Società",
+    "view-cultura-home": "Cultura, Innovazione e Rivoluzioni",
+    "view-crisi-home": "Crisi, Trasformazioni e Cicli Storici"
+  };
+
+  for (const [viewId, areaTitle] of Object.entries(macroareaMap)) {
+    const el = document.getElementById(viewId);
+    if (el && !el.classList.contains("hidden")) {
+      return {
+        type: "macroarea",
+        title: areaTitle
+      };
+    }
+  }
+
+  // Caso C: L'utente sta esplorando una delle 4 Epoche nel Programma
+  const viewProgramma = document.getElementById("viewProgramma");
+  if (viewProgramma && viewProgramma.classList.contains("active")) {
+    const epocaMap = {
+      "grid-antica": "Età Antica",
+      "grid-medievale": "Età Medievale",
+      "grid-moderna": "Età Moderna",
+      "grid-contemporanea": "Età Contemporanea"
+    };
+    return {
+      type: "epoca",
+      title: epocaMap[epocaAttivaId] || "Programma Storico Generale"
+    };
+  }
+
+  // Caso D: Schermata iniziale / Home
+  return { type: "home", title: "Historia Chronos" };
+}
 
 function sendQuickPrompt(text) {
   const input = document.getElementById("aiChatInput");
@@ -331,18 +440,10 @@ function sendQuickPrompt(text) {
 
 function triggerSmartAction(mode) {
   if (isChronosGenerating) return;
-  const hasContext = chronosChatHistory.length > 0;
-
   if (mode === "explain") {
-    const prompt = hasContext
-      ? "Puoi rispiegarmi quest'ultimo concetto in modo ancora più semplice e chiaro, magari con un esempio concreto?"
-      : "Vorrei che mi spiegassi un argomento di storia in modo semplice: chiedimi pure su quale epoca, evento o personaggio ho dei dubbi.";
-    sendQuickPrompt(prompt);
+    sendQuickPrompt("Spiegamelo meglio");
   } else if (mode === "quiz") {
-    const prompt = hasContext
-      ? "Fammi una domanda di verifica su questo stesso argomento storico per vedere se ho capito bene. Aspetta la mia risposta prima di darmi la soluzione."
-      : "Interrogami su un argomento importante di storia (scegli tu tra Antica, Medievale, Moderna o Contemporanea). Fammi una sola domanda chiara e aspetta la mia risposta prima di correggermi.";
-    sendQuickPrompt(prompt);
+    sendQuickPrompt("Interrogami");
   }
 }
 
@@ -374,6 +475,7 @@ async function handleChatSubmit(event) {
   chatBody.scrollTop = chatBody.scrollHeight;
 
   let fullReply = "";
+  const currentContext = getChronosPageContext();
 
   try {
     const response = await fetch(CHRONOS_AI_WORKER_URL, {
@@ -381,7 +483,8 @@ async function handleChatSubmit(event) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message,
-        history: chronosChatHistory
+        history: chronosChatHistory,
+        context: currentContext
       })
     });
 
