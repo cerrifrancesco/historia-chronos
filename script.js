@@ -317,10 +317,53 @@ function showHome() {
   showView('view-home');
 }
 
-// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA) ===
+// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + PULISCI + MARKDOWN) ===
 const CHRONOS_AI_WORKER_URL = "https://chronos-ai-worker.cerrifrancesco85.workers.dev";
 let chronosChatHistory = [];
 let isChronosGenerating = false;
+
+// Formattazione Markdown pulita (grassetto, corsivo, elenchi puntati e a capo)
+function formatChronosMarkdown(text) {
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // Grassetto **testo**
+  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  // Corsivo *testo*
+  html = html.replace(/(^|[^*])\*([^*]+?)\*(?!\*)/g, "$1<em>$2</em>");
+  // Elenchi puntati (- elemento o * elemento a inizio riga)
+  html = html.replace(/^\s*[-*]\s+(.+)$/gm, "• $1");
+  // A capo
+  html = html.replace(/\n/g, "<br>");
+
+  return html;
+}
+
+// Pulisce la chat e ripristina il messaggio di benvenuto
+function clearChronosChat() {
+  if (isChronosGenerating) return;
+  chronosChatHistory = [];
+  const chatBody = document.getElementById("chatBody");
+  if (!chatBody) return;
+
+  const lessonPane = document.querySelector(".lezione-content-pane");
+  if (lessonPane && lessonPane.style.display !== "none") {
+    const lessonTitle = lessonPane.querySelector(".hero-title")?.textContent?.trim() || "questa lezione";
+    chatBody.innerHTML = `
+      <div class="chat-msg ai-msg">
+        Chat azzerata! Sono pronto per nuove domande o verifiche su <strong>${lessonTitle}</strong>.
+      </div>
+    `;
+  } else {
+    chatBody.innerHTML = `
+      <div class="chat-msg ai-msg">
+        Chat azzerata! Sono <strong>Chronos AI</strong>, il tuo tutor storico. Chiedimi qualsiasi chiarimento o domanda di ripasso!
+      </div>
+    `;
+  }
+}
 
 // 1. Inserisce automaticamente Chronos AI in fondo a tutte le pagine delle lezioni (lezioni/*.html)
 document.addEventListener("DOMContentLoaded", () => {
@@ -333,12 +376,22 @@ document.addEventListener("DOMContentLoaded", () => {
     tutorSection.style.marginTop = "40px";
     tutorSection.innerHTML = `
       <div class="tutor-card">
-        <div class="tutor-header">
-          <div class="tutor-avatar">🤖</div>
-          <div>
-            <h3>Chronos AI <span class="gold-text">Tutor Storico</span></h3>
-            <p>Hai dubbi su <strong>${lessonTitle}</strong>? Chiedi pure o mettiti alla prova!</p>
+        <div class="tutor-header" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="tutor-avatar">🤖</div>
+            <div>
+              <h3>Chronos AI <span class="gold-text">Tutor Storico</span></h3>
+              <p>Hai dubbi su <strong>${lessonTitle}</strong>? Chiedi pure o mettiti alla prova!</p>
+            </div>
           </div>
+          <button
+            type="button"
+            onclick="clearChronosChat()"
+            title="Inizia una nuova conversazione"
+            style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;"
+          >
+            🗑️ Pulisci
+          </button>
         </div>
         <div class="tutor-chat-body" id="chatBody">
           <div class="chat-msg ai-msg">
@@ -374,7 +427,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // 2. Rileva automaticamente in che punto del sito si trova l'utente
 function getChronosPageContext() {
-  // Caso A: L'utente è dentro una pagina di lezione (es. lezioni/1.1.html)
   const lessonPane = document.querySelector(".lezione-content-pane");
   if (lessonPane && lessonPane.style.display !== "none") {
     const title = lessonPane.querySelector(".hero-title")?.textContent?.trim() || "";
@@ -393,7 +445,6 @@ function getChronosPageContext() {
     };
   }
 
-  // Caso B: L'utente ha aperto una delle 5 Macroaree in index.html
   const macroareaMap = {
     "view-home": "Economia, Commercio e Lavoro",
     "view-guerre-home": "Guerre, Imperi e Geopolitica",
@@ -412,7 +463,6 @@ function getChronosPageContext() {
     }
   }
 
-  // Caso C: L'utente sta esplorando una delle 4 Epoche nel Programma
   const viewProgramma = document.getElementById("viewProgramma");
   if (viewProgramma && viewProgramma.classList.contains("active")) {
     const epocaMap = {
@@ -427,7 +477,6 @@ function getChronosPageContext() {
     };
   }
 
-  // Caso D: Schermata iniziale / Home
   return { type: "home", title: "Historia Chronos" };
 }
 
@@ -518,9 +567,7 @@ async function handleChatSubmit(event) {
             const chunk = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || "";
             if (chunk) {
               fullReply += chunk;
-              aiDiv.innerHTML = fullReply
-                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                .replace(/\n/g, "<br>");
+              aiDiv.innerHTML = formatChronosMarkdown(fullReply);
               chatBody.scrollTop = chatBody.scrollHeight;
             }
           } catch (_) {}
