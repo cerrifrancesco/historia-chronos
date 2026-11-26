@@ -444,3 +444,33 @@
       .hero-section { min-height: 60vh; padding-top: 100px; }
       .mega-aree-grid { grid-template-columns: 1fr; }
     }
+/* === FIX FOOTER CARD LEZIONI (TAG + BOTTONE APRI LEZIONE) === */
+.lezione-card-rect {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-rect-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.card-rect-footer .tag {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.card-rect-footer .btn-apri,
+.btn-apri {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
