@@ -818,3 +818,23 @@ async function handleChatSubmit(event, fromModal = false) {
     }
   }
 }
+// Nasconde il link "Chronos AI" nell'header solo quando è aperta la sezione Atlante & Monete
+document.addEventListener("DOMContentLoaded", () => {
+  const navChronosLinks = document.querySelectorAll('a[href="#ai-tutor"]');
+  if (!navChronosLinks.length) return;
+
+  function toggleChronosNavVisibility() {
+    const pageText = document.body.innerText || "";
+    const isAtlanteOpen =
+      pageText.includes("WORLD EXPLORER") ||
+      Boolean(document.querySelector('#viewAtlante:not(.hidden), #view-atlante:not(.hidden), .atlante-section:not(.hidden)'));
+
+    navChronosLinks.forEach(link => {
+      link.style.display = isAtlanteOpen ? "none" : "";
+    });
+  }
+
+  toggleChronosNavVisibility();
+  document.addEventListener("click", () => setTimeout(toggleChronosNavVisibility, 60));
+});
+
