@@ -25,6 +25,18 @@ function initPathwaySwitcher() {
   const btnProgramma = document.getElementById('btnProgramma');
   const viewMegaAree = document.getElementById('viewMegaAree');
   const viewProgramma = document.getElementById('viewProgramma');
+  const navMappe = document.getElementById('navMappeStoriche');
+  const mobileNavMappe = document.getElementById('mobileNavMappeStoriche');
+
+  function updateMappeNavVisibility() {
+    if (!viewProgramma) return;
+    const isProgrammaActive = viewProgramma.classList.contains('active');
+    if (navMappe) navMappe.style.display = isProgrammaActive ? '' : 'none';
+    if (mobileNavMappe) mobileNavMappe.style.display = isProgrammaActive ? '' : 'none';
+  }
+
+  // Controllo iniziale al caricamento pagina
+  updateMappeNavVisibility();
 
   if (btnMegaAree && btnProgramma && viewMegaAree && viewProgramma) {
     btnMegaAree.addEventListener('click', () => {
@@ -33,6 +45,7 @@ function initPathwaySwitcher() {
       document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
       viewMegaAree.classList.add('active');
       viewProgramma.classList.remove('active');
+      updateMappeNavVisibility();
     });
     btnProgramma.addEventListener('click', () => {
       btnProgramma.classList.add('active');
@@ -40,9 +53,11 @@ function initPathwaySwitcher() {
       document.querySelectorAll('.view-screen').forEach(el => { el.classList.add('hidden'); el.classList.remove('flex'); });
       viewProgramma.classList.add('active');
       viewMegaAree.classList.remove('active');
+      updateMappeNavVisibility();
     });
   }
 }
+
 
 const quizDatabase = {
   'q1-1': { correctOpt: 'B', explanation: 'Con la stanzialità l\'uomo fonda i primi villaggi stabili per curare i campi e gli allevamenti.' },
