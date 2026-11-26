@@ -8,7 +8,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Antica",
     center: [36, 29],
     zoom: 3.4,
-    lessonUrl: "lezioni/1.1.html",
+    lessonUrl: "index.html?lezione=1.1",
     lessonText: "📖 Vai alla Lezione 1.1",
     description: "Lungo le valli del Tigri, dell'Eufrate e del Nilo nascono le prime città-stato, la scrittura cuneiforme e geroglifica, i sistemi di irrigazione e le prime monarchie teocratiche.",
     regions: [
@@ -27,7 +27,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Antica",
     center: [34, 35],
     zoom: 3.2,
-    lessonUrl: "lezioni/1.6.html",
+    lessonUrl: "index.html?lezione=1.6",
     lessonText: "📖 Vai alla Lezione 1.6",
     description: "Le poleis greche guidate da Atene e Sparta respingono l'espansione dell'immenso Impero Persiano Achemenide nelle battaglie di Maratona, Termopili e Salamina.",
     regions: [
@@ -46,7 +46,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Antica",
     center: [45, 33],
     zoom: 2.7,
-    lessonUrl: "lezioni/1.7.html",
+    lessonUrl: "index.html?lezione=1.7",
     lessonText: "📖 Vai alla Lezione 1.7",
     description: "In poco più di dieci anni Alessandro Magno conquista l'intero Impero Persiano fino ai confini dell'India, diffondendo la lingua e la cultura greca in tutto il Mediterraneo orientale.",
     regions: [
@@ -65,7 +65,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Antica",
     center: [16, 41],
     zoom: 2.7,
-    lessonUrl: "lezioni/1.12.html",
+    lessonUrl: "index.html?lezione=1.12",
     lessonText: "📖 Vai alla Lezione 1.12",
     description: "Sotto l'imperatore Traiano Roma raggiunge la sua massima estensione territoriale, controllando l'intero bacino del Mediterraneo (Mare Nostrum) dalla Britannia alla Mesopotamia.",
     regions: [
@@ -84,7 +84,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Antica",
     center: [15, 43],
     zoom: 2.8,
-    lessonUrl: "lezioni/1.15.html",
+    lessonUrl: "index.html?lezione=1.15",
     lessonText: "📖 Vai alla Lezione 1.15",
     description: "Con la deposizione di Romolo Augustolo nel 476 d.C. crolla l'Impero Romano d'Occidente, sostituito dai Regni Romano-Barbarici, mentre l'Impero d'Oriente sopravvive a Costantinopoli.",
     regions: [
@@ -103,7 +103,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Medievale",
     center: [10, 46],
     zoom: 3.1,
-    lessonUrl: "index.html#percorsi",
+    lessonUrl: "index.html?epoca=medievale#percorsi",
     lessonText: "📖 Esplora Età Medievale",
     description: "Nella notte di Natale dell'800 Papa Leone III incorona Carlo Magno imperatore: nasce il Sacro Romano Impero, che unifica gran parte dell'Europa centro-occidentale sotto il sistema feudale.",
     regions: [
@@ -123,7 +123,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Medievale",
     center: [18, 43],
     zoom: 2.9,
-    lessonUrl: "index.html#percorsi",
+    lessonUrl: "index.html?epoca=medievale#percorsi",
     lessonText: "📖 Esplora Età Medievale",
     description: "Le Repubbliche Marinare italiane dominano le rotte commerciali tra Oriente e Occidente, ma proprio lungo le vie carovaniere e marittime si diffonde la Peste Nera del 1347-1348.",
     regions: [
@@ -141,7 +141,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Moderna",
     center: [-30, 22],
     zoom: 1.7,
-    lessonUrl: "index.html#percorsi",
+    lessonUrl: "index.html?epoca=moderna#percorsi",
     lessonText: "📖 Esplora Età Moderna",
     description: "Con i viaggi di Cristoforo Colombo e Vasco da Gama il baricentro economico mondiale si sposta dal Mediterraneo all'Oceano Atlantico, dando inizio agli imperi coloniali europei.",
     regions: [
@@ -160,7 +160,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Moderna",
     center: [14, 48],
     zoom: 2.9,
-    lessonUrl: "index.html#percorsi",
+    lessonUrl: "index.html?epoca=moderna#percorsi",
     lessonText: "📖 Esplora Età Moderna",
     description: "Dopo la sconfitta di Napoleone a Waterloo, le grandi potenze europee ridisegnano i confini al Congresso di Vienna secondo i principi di legittimità ed equilibrio.",
     regions: [
@@ -179,7 +179,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Contemporanea",
     center: [16, 48],
     zoom: 2.8,
-    lessonUrl: "index.html#percorsi",
+    lessonUrl: "index.html?epoca=contemporanea#percorsi",
     lessonText: "📖 Esplora Età Contemporanea",
     description: "L'attentato di Sarajevo innesca il sistema delle alleanze europee: la Triplice Intesa affronta gli Imperi Centrali in un conflitto mondiale di logoramento.",
     regions: [
@@ -198,7 +198,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Contemporanea",
     center: [15, 38],
     zoom: 1.6,
-    lessonUrl: "index.html#percorsi",
+    lessonUrl: "index.html?epoca=contemporanea#percorsi",
     lessonText: "📖 Esplora Età Contemporanea",
     description: "Con la sconfitta delle potenze dell'Asse nel 1945 il mondo si divide in due blocchi contrapposti guidati da Stati Uniti e Unione Sovietica.",
     regions: [
@@ -217,7 +217,7 @@ const HISTORICAL_STAGES = [
     eraLabel: "Età Contemporanea",
     center: [12, 49],
     zoom: 3.1,
-    lessonUrl: "index.html#percorsi",
+    lessonUrl: "index.html?epoca=contemporanea#percorsi",
     lessonText: "📖 Esplora Età Contemporanea",
     description: "Dopo il crollo del Muro di Berlino e la fine dell'URSS, il Trattato di Maastricht getta le basi dell'Unione Europea e della moneta unica.",
     regions: [
