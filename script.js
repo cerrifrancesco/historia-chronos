@@ -852,4 +852,39 @@ document.addEventListener("DOMContentLoaded", () => {
   toggleChronosNavVisibility();
   document.addEventListener("click", () => setTimeout(toggleChronosNavVisibility, 60));
 });
+// Apertura automatica della lezione o dell'epoca arrivando da Mappe Storiche (?lezione=1.1 o ?epoca=medievale)
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+  const lezioneParam = params.get("lezione");
+  const epocaParam = params.get("epoca");
+
+  if (lezioneParam) {
+    setTimeout(() => {
+      // Cerca la card della lezione corrispondente (es. "Lezione 1.1") e simula il clic su "Apri Lezione"
+      const cards = Array.from(document.querySelectorAll(".lesson-card, .card, article, div"));
+      const targetCard = cards.find(el => {
+        const badge = el.querySelector(".badge-gold, .lesson-num, span, h4");
+        return badge && badge.textContent.trim() === `Lezione ${lezioneParam}`;
+      });
+      const openBtn = targetCard?.querySelector("a, button");
+      if (openBtn) {
+        openBtn.click();
+      }
+    }, 150);
+  } else if (epocaParam) {
+    setTimeout(() => {
+      const epocaTabMap = {
+        antica: "grid-antica",
+        medievale: "grid-medievale",
+        moderna: "grid-moderna",
+        contemporanea: "grid-contemporanea"
+      };
+      const targetGridId = epocaTabMap[epocaParam];
+      if (targetGridId) {
+        const eraBtn = document.querySelector(`[onclick*="${targetGridId}"]`);
+        if (eraBtn) eraBtn.click();
+      }
+    }, 150);
+  }
+});
 
