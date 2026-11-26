@@ -58,7 +58,6 @@ function initPathwaySwitcher() {
   }
 }
 
-
 const quizDatabase = {
   'q1-1': { correctOpt: 'B', explanation: 'Con la stanzialità l\'uomo fonda i primi villaggi stabili per curare i campi e gli allevamenti.' },
   'q1-2': { correctOpt: 'B', explanation: 'Mesopotamia in greco significa proprio "terra tra due fiumi" (Tigri ed Eufrate).' },
@@ -332,7 +331,7 @@ function showHome() {
   showView('view-home');
 }
 
-// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + MODALE FULL-SCREEN + PULISCI + MARKDOWN + GLOSSARIO DOPPIO CLIC) ===
+// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + MODALE FULL-SCREEN + PULISCI + MARKDOWN + GLOSSARIO SELEZIONE) ===
 const CHRONOS_AI_WORKER_URL = "https://chronos-ai-worker.cerrifrancesco85.workers.dev";
 let chronosChatHistory = [];
 let isChronosGenerating = false;
@@ -355,9 +354,9 @@ function getChronosWelcomeHtml() {
   const lessonPane = document.querySelector(".lezione-content-pane");
   if (lessonPane && lessonPane.style.display !== "none") {
     const lessonTitle = lessonPane.querySelector(".hero-title")?.textContent?.trim() || "questa lezione";
-    return `Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento, <strong>Schema flash</strong> per la sintesi o <strong>Interrogami</strong> per un'interrogazione con voto! <em>(Suggerimento: fai doppio clic su qualsiasi parola del testo per chiedermene il significato).</em>`;
+    return `Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento, <strong>Schema flash</strong> per la sintesi o <strong>Interrogami</strong> per un'interrogazione con voto! <em>(Suggerimento: seleziona qualsiasi parola del testo per chiedermene il significato).</em>`;
   }
-  return `Ciao! Sono <strong>Chronos AI</strong>, il tuo tutor storico. Chiedimi qualsiasi chiarimento, schema flash o interrogazione sulle epoche storiche!`;
+  return `Ciao! Sono <strong>Chronos AI</strong>, il tuo tutor storico. Chiedimi qualsiasi chiarimento, schema flash o interrogazione sulle epoche storiche e sulle macroaree!`;
 }
 
 function clearChronosChat() {
@@ -371,7 +370,6 @@ function clearChronosChat() {
   if (modalBody) modalBody.innerHTML = resetMsg;
 }
 
-// Apre e chiude la finestra modale quasi a tutto schermo
 function openChronosModal() {
   const modal = document.getElementById("chronosFullModal");
   const inlineBody = document.getElementById("chatBody");
@@ -380,12 +378,10 @@ function openChronosModal() {
 
   if (!modal || !modalBody) return;
 
-  // Sincronizza il contenuto della chat
   if (inlineBody) {
     modalBody.innerHTML = inlineBody.innerHTML;
   }
 
-  // Aggiorna l'etichetta del contesto attivo in alto nella modale
   const ctx = getChronosPageContext();
   if (modalContextLabel) {
     if (ctx.type === "lesson") {
@@ -490,7 +486,6 @@ function initChronosFullModal() {
     </div>
   `;
 
-  // Chiude cliccando sullo sfondo oscurato esterno o premendo ESC
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeChronosModal();
   });
@@ -500,7 +495,6 @@ function initChronosFullModal() {
 
   document.body.appendChild(modal);
 
-  // Intercetta tutti i link "Chronos AI" nella navbar (href="#ai-tutor") per aprire la finestra grande
   document.querySelectorAll('a[href="#ai-tutor"]').forEach(link => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
@@ -509,7 +503,6 @@ function initChronosFullModal() {
     });
   });
 
-  // Aggiunge il bottone "⛶ Espandi" anche nell'header della chat di index.html se presente
   const existingHeader = document.querySelector("#ai-tutor .tutor-header");
   if (existingHeader && !existingHeader.querySelector("[onclick='openChronosModal()']")) {
     const btnGroup = existingHeader.querySelector("div:last-child");
@@ -599,8 +592,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initChronosFullModal();
   initSelectionGlossaryPopup();
+
+  // Gestione apertura automatica lezione o epoca arrivando da Mappe Storiche (?lezione=1.1 o ?epoca=medievale)
+  const params = new URLSearchParams(window.location.search);
+  const lezioneParam = params.get("lezione");
+  const epocaParam = params.get("epoca");
+
+  if (lezioneParam) {
+    const lezId = "lez-" + lezioneParam.replace(/\./g, "-");
+    setTimeout(() => {
+      if (typeof openLezioneDetail === "function") {
+        openLezioneDetail(lezId);
+      } else {
+        const card = document.querySelector(`[onclick*="openLezioneDetail('${lezId}')"]`);
+        if (card) card.click();
+      }
+    }, 100);
+  } else if (epocaParam) {
+    setTimeout(() => {
+      const btn = document.querySelector(`[onclick*="switchEpoca('${epocaParam}'"]`);
+      if (typeof switchEpoca === "function" && btn) {
+        switchEpoca(epocaParam, btn);
+      } else if (btn) {
+        btn.click();
+      }
+    }, 100);
+  }
 });
 
+// Glossario rapido al doppio clic o selezione testo (attivo su Lezioni Scolastiche E Mega Aree Tematiche)
 function initSelectionGlossaryPopup() {
   const popupBtn = document.createElement("button");
   popupBtn.id = "chronosSelectionPopup";
@@ -610,10 +630,20 @@ function initSelectionGlossaryPopup() {
 
   let selectedTerm = "";
 
-  function checkSelection() {
+  function getActiveReadableContainer(node) {
+    if (!node) return null;
     const lessonPane = document.querySelector(".lezione-content-pane");
-    if (!lessonPane) return;
+    if (lessonPane && lessonPane.style.display !== "none" && lessonPane.contains(node)) {
+      return lessonPane;
+    }
+    const macroContainer = document.getElementById("viewMegaAree");
+    if (macroContainer && macroContainer.classList.contains("active") && macroContainer.contains(node)) {
+      return macroContainer;
+    }
+    return null;
+  }
 
+  function checkSelection() {
     const selection = window.getSelection();
     const text = selection ? selection.toString().trim() : "";
 
@@ -621,8 +651,9 @@ function initSelectionGlossaryPopup() {
       text.length >= 3 &&
       text.length <= 60 &&
       selection.rangeCount > 0 &&
-      lessonPane.contains(selection.anchorNode) &&
-      !document.getElementById("ai-tutor")?.contains(selection.anchorNode)
+      getActiveReadableContainer(selection.anchorNode) &&
+      !document.getElementById("ai-tutor")?.contains(selection.anchorNode) &&
+      !document.getElementById("chronosFullModal")?.contains(selection.anchorNode)
     ) {
       const rect = selection.getRangeAt(0).getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
@@ -645,8 +676,13 @@ function initSelectionGlossaryPopup() {
     popupBtn.style.display = "none";
     window.getSelection()?.removeAllRanges();
 
+    const ctx = getChronosPageContext();
+    const contextPhrase = ctx.type === "macroarea"
+      ? `nella macroarea "${ctx.title}"`
+      : "nel contesto di questa lezione";
+
     openChronosModal();
-    sendQuickPrompt(`Spiegami brevemente il significato storico di "${selectedTerm}" nel contesto di questa lezione.`, true);
+    sendQuickPrompt(`Spiegami brevemente il significato storico di "${selectedTerm}" ${contextPhrase}.`, true);
   });
 }
 
@@ -824,7 +860,6 @@ async function handleChatSubmit(event, fromModal = false) {
     }
     chatBody.scrollTop = chatBody.scrollHeight;
 
-    // Mantiene sincronizzate entrambe le chat (modale e fondo pagina)
     const inlineBody = document.getElementById("chatBody");
     const modalBody = document.getElementById("modalChatBody");
     if (inlineBody && modalBody) {
@@ -833,52 +868,3 @@ async function handleChatSubmit(event, fromModal = false) {
     }
   }
 }
-// Nasconde il link "Chronos AI" nell'header solo quando è aperta la sezione Atlante & Monete
-document.addEventListener("DOMContentLoaded", () => {
-  const navChronosLinks = document.querySelectorAll('a[href="#ai-tutor"]');
-  if (!navChronosLinks.length) return;
-
-  function toggleChronosNavVisibility() {
-    const pageText = document.body.innerText || "";
-    const isAtlanteOpen =
-      pageText.includes("WORLD EXPLORER") ||
-      Boolean(document.querySelector('#viewAtlante:not(.hidden), #view-atlante:not(.hidden), .atlante-section:not(.hidden)'));
-
-    navChronosLinks.forEach(link => {
-      link.style.display = isAtlanteOpen ? "none" : "";
-    });
-  }
-
-  toggleChronosNavVisibility();
-  document.addEventListener("click", () => setTimeout(toggleChronosNavVisibility, 60));
-});
-// Apertura automatica della lezione o dell'epoca arrivando da Mappe Storiche (?lezione=1.1 o ?epoca=medievale)
-document.addEventListener("DOMContentLoaded", () => {
-  const params = new URLSearchParams(window.location.search);
-  const lezioneParam = params.get("lezione");
-  const epocaParam = params.get("epoca");
-
-  if (lezioneParam) {
-    // Trasforma "1.1" in "lez-1-1" e chiama direttamente openLezioneDetail
-    const lezId = "lez-" + lezioneParam.replace(/\./g, "-");
-    setTimeout(() => {
-      if (typeof openLezioneDetail === "function") {
-        openLezioneDetail(lezId);
-      } else {
-        const card = document.querySelector(`[onclick*="openLezioneDetail('${lezId}')"]`);
-        if (card) card.click();
-      }
-    }, 100);
-  } else if (epocaParam) {
-    setTimeout(() => {
-      const btn = document.querySelector(`[onclick*="switchEpoca('${epocaParam}'"]`);
-      if (typeof switchEpoca === "function" && btn) {
-        switchEpoca(epocaParam, btn);
-      } else if (btn) {
-        btn.click();
-      }
-    }, 100);
-  }
-});
-
-
