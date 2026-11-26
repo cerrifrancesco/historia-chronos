@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Historia Chronos | Mappe Storiche &amp; Timeline</title>
+
+  <!-- D3.js & TopoJSON -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+
+  <!-- Google Fonts & Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#121418', surface: '#1a1d24', cardbg: '#222631',
+            goldprimary: '#d4af37', goldlight: '#f3e5ab', textmain: '#f5f6f8',
+            textmuted: '#9ba1a6', bordergold: 'rgba(212, 175, 55, 0.3)'
+          },
+          fontFamily: { cinzel: ['Cinzel', 'serif'], inter: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="style.css" rel="stylesheet" />
+  <style>
+    .timeline-card {
+      background: #1a1d24;
+      border: 1px solid rgba(212, 175, 55, 0.32);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.45);
+    }
+    .era-filter-btn {
+      background: #121418;
+      color: #f5f6f8;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .era-filter-btn.active, .era-filter-btn:hover {
+      background: #d4af37;
+      color: #121418;
+      border-color: #d4af37;
+    }
+    .map-stage-box {
+      width: 100%;
+      height: 460px;
+      background: radial-gradient(circle at center, #1b2230 0%, #0f1218 100%);
+      border: 1px solid rgba(212, 175, 55, 0.28);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      touch-action: none;
+    }
+    @media (max-width: 768px) {
+      .map-stage-box { height: 340px; }
+    }
+    .chronos-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #2b303c;
+      border-radius: 999px;
+      outline: none;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+    }
+    .chronos-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #d4af37;
+      border: 3px solid #121418;
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.8);
+      cursor: pointer;
+    }
+    .play-btn {
+      background: #d4af37;
+      color: #121418;
+      font-weight: 700;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      transition: transform 0.15s;
+    }
+    .play-btn:active { transform: scale(0.97); }
+    .step-pill {
+      background: #121418;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      color: #9ba1a6;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .step-pill.active {
+      background: rgba(212, 175, 55, 0.18);
+      border-color: #d4af37;
+      color: #f3e5ab;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="main-header">
+    <div class="header-container">
+      <a href="index.html" class="brand-logo" style="text-decoration: none; color: inherit;">
+        <span class="logo-icon">🏛️</span>
+        <span class="logo-text">Historia <span class="gold-text">Chronos</span></span>
+      </a>
+      <nav class="desktop-nav">
+        <a class="nav-link active" href="mappe-storiche.html">Mappe Storiche</a>
+        <a class="nav-link" href="index.html">Programma</a>
+        <a class="nav-link" href="index.html#ai-tutor">Chronos AI</a>
+      </nav>
+      <button aria-label="Apri Menu" class="mobile-menu-btn" id="mobileMenuBtn" onclick="document.getElementById('mobileDrawer').classList.add('open')">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="drawer-header">
+      <span class="logo-text">Historia <span class="gold-text">Chronos</span></span>
+      <button class="close-drawer" id="closeDrawer" onclick="document.getElementById('mobileDrawer').classList.remove('open')">×</button>
+    </div>
+    <nav class="mobile-nav">
+      <a class="mobile-link" href="mappe-storiche.html">Mappe Storiche</a>
+      <a class="mobile-link" href="index.html">Programma Scolastico</a>
+      <a class="mobile-link" href="index.html#ai-tutor">Chronos AI</a>
+    </nav>
+  </div>
+
+  <!-- CONTENUTO PRINCIPALE -->
+  <main class="main-container" style="padding-top: 100px; padding-bottom: 60px;">
+    <div style="text-align: center; margin-bottom: 28px;">
+      <div class="badge-gold" style="margin-bottom: 10px;">Atlante Diacronico Interattivo</div>
+      <h1 style="font-size: 2.3rem; margin-bottom: 8px;">Mappe Storiche &amp; <span class="gold-text">Timeline</span></h1>
+      <p style="color: var(--text-muted); max-width: 680px; margin: 0 auto;">
+        Sposta la linea del tempo o avvia l'animazione per osservare l'evoluzione delle civiltà, degli imperi e delle grandi svolte dal 3000 a.C. al Novecento.
+      </p>
+    </div>
+
+    <!-- Filtri rapidi per Epoca -->
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 22px;" id="eraFilterBar">
+      <button class="era-filter-btn active" onclick="filterTimelineEra('all', this)">Tutte le Epoche</button>
+      <button class="era-filter-btn" onclick="filterTimelineEra('antica', this)">Età Antica</button>
+      <button class="era-filter-btn" onclick="filterTimelineEra('medievale', this)">Età Medievale</button>
+      <button class="era-filter-btn" onclick="filterTimelineEra('moderna', this)">Età Moderna</button>
+      <button class="era-filter-btn" onclick="filterTimelineEra('contemporanea', this)">Età Contemporanea</button>
+    </div>
+
+    <div class="timeline-card">
+      <!-- Barra Controlli Timeline (Play + Anno + Slider) -->
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button type="button" id="btnTimelinePlay" class="play-btn" onclick="toggleTimelinePlayback()">
+            ▶ Play
+          </button>
+          <div>
+            <span id="timelineEraBadge" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #d4af37; font-weight: 700;">Età Antica</span>
+            <h2 id="timelineYearTitle" style="font-size: 1.45rem; margin: 0; color: #f5f6f8;">3000 a.C. — Prime Civiltà Fluviali</h2>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="step-pill" onclick="stepTimeline(-1)">◀ Precedente</button>
+          <button type="button" class="step-pill" onclick="stepTimeline(1)">Successiva ▶</button>
+          <button type="button" class="step-pill" onclick="resetHistoricalMapZoom()">⟲ Centra Mappa</button>
+        </div>
+      </div>
+
+      <!-- Slider temporale -->
+      <div style="margin-bottom: 14px;">
+        <input type="range" id="timelineSlider" class="chronos-slider" min="0" max="11" value="0" oninput="selectTimelineIndex(Number(this.value))" />
+      </div>
+
+      <!-- Pillole cliccabili delle tappe -->
+      <div id="timelinePillsRow" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 16px;"></div>
+
+      <!-- Mappa D3 Interattiva -->
+      <div class="map-stage-box" id="historicalMapCanvas">
+        <div id="mapHoverTooltip" style="display: none; position: absolute; z-index: 20; background: rgba(18, 20, 24, 0.94); border: 1px solid #d4af37; color: #f5f6f8; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; pointer-events: none; box-shadow: 0 6px 18px rgba(0,0,0,0.6);"></div>
+      </div>
+
+      <!-- Legenda e Scheda Storica della tappa corrente -->
+      <div style="margin-top: 18px; display: grid; grid-template-columns: 1fr; gap: 16px;">
+        <div id="timelineLegend" style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.85rem; color: #d1d5db;"></div>
+
+        <div style="background: #121418; border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 12px; padding: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+          <div style="flex: 1; min-width: 260px;">
+            <h3 id="timelineDetailHeading" style="color: #d4af37; font-size: 1.15rem; margin: 0 0 6px;">Quadro Storico e Geopolitico</h3>
+            <p id="timelineDetailDesc" style="color: #e5e7eb; font-size: 0.95rem; line-height: 1.65; margin: 0;"></p>
+          </div>
+          <a id="timelineLessonLink" href="lezioni/1.1.html" style="background: rgba(212, 175, 55, 0.16); border: 1px solid #d4af37; color: #f3e5ab; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; white-space: nowrap;">
+            📖 Apri la Lezione collegata →
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script src="mappe-storiche.js"></script>
+</body>
+</html>
