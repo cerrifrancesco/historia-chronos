@@ -106,6 +106,10 @@ function initSmartBackNavigation() {
   if (!isInLessonPage) return;
 
   const targetEpoca = detectEraFromLessonContext();
+    const activeLessonPane = document.querySelector('.lezione-content-pane');
+  if (activeLessonPane) {
+    activeLessonPane.style.display = 'block';
+  }
   const returnHref = `../index.html?epoca=${targetEpoca}#percorsi`;
 
   try {
@@ -297,9 +301,12 @@ function switchEpoca(epoca, btn) {
     grid.style.display = grid.id === epocaAttivaId ? 'block' : 'none';
   });
 
-  document.querySelectorAll('.lezione-content-pane').forEach(pane => {
-    pane.style.display = 'none';
-  });
+  const isStandaloneLessonPage = window.location.pathname.includes('/lezioni/') || Boolean(document.querySelector('main .lezione-content-pane'));
+  if (!isStandaloneLessonPage) {
+    document.querySelectorAll('.lezione-content-pane').forEach(pane => {
+      pane.style.display = 'none';
+    });
+  }
 
   const detailContainer = document.getElementById('lezioneDetailContainer');
   if (detailContainer) detailContainer.style.display = 'none';
