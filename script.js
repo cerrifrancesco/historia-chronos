@@ -317,7 +317,7 @@ function showHome() {
   showView('view-home');
 }
 
-// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + PULISCI + MARKDOWN + SCHEMA FLASH + GLOSSARIO DOPPIO CLIC) ===
+// === CHRONOS AI TUTOR (CONSAPEVOLE DI LEZIONE, EPOCA E MACROAREA + MODALE FULL-SCREEN + PULISCI + MARKDOWN + GLOSSARIO DOPPIO CLIC) ===
 const CHRONOS_AI_WORKER_URL = "https://chronos-ai-worker.cerrifrancesco85.workers.dev";
 let chronosChatHistory = [];
 let isChronosGenerating = false;
@@ -336,30 +336,183 @@ function formatChronosMarkdown(text) {
   return html;
 }
 
-function clearChronosChat() {
-  if (isChronosGenerating) return;
-  chronosChatHistory = [];
-  const chatBody = document.getElementById("chatBody");
-  if (!chatBody) return;
-
+function getChronosWelcomeHtml() {
   const lessonPane = document.querySelector(".lezione-content-pane");
   if (lessonPane && lessonPane.style.display !== "none") {
     const lessonTitle = lessonPane.querySelector(".hero-title")?.textContent?.trim() || "questa lezione";
-    chatBody.innerHTML = `
-      <div class="chat-msg ai-msg">
-        Chat azzerata! Sono pronto per nuove domande, schemi flash o verifiche su <strong>${lessonTitle}</strong>.
+    return `Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento, <strong>Schema flash</strong> per la sintesi o <strong>Interrogami</strong> per un'interrogazione con voto! <em>(Suggerimento: fai doppio clic su qualsiasi parola del testo per chiedermene il significato).</em>`;
+  }
+  return `Ciao! Sono <strong>Chronos AI</strong>, il tuo tutor storico. Chiedimi qualsiasi chiarimento, schema flash o interrogazione sulle epoche storiche!`;
+}
+
+function clearChronosChat() {
+  if (isChronosGenerating) return;
+  chronosChatHistory = [];
+  const resetMsg = `<div class="chat-msg ai-msg">Chat azzerata! ${getChronosWelcomeHtml()}</div>`;
+
+  const inlineBody = document.getElementById("chatBody");
+  const modalBody = document.getElementById("modalChatBody");
+  if (inlineBody) inlineBody.innerHTML = resetMsg;
+  if (modalBody) modalBody.innerHTML = resetMsg;
+}
+
+// Apre e chiude la finestra modale quasi a tutto schermo
+function openChronosModal() {
+  const modal = document.getElementById("chronosFullModal");
+  const inlineBody = document.getElementById("chatBody");
+  const modalBody = document.getElementById("modalChatBody");
+  const modalContextLabel = document.getElementById("chronosModalContextLabel");
+
+  if (!modal || !modalBody) return;
+
+  // Sincronizza il contenuto della chat
+  if (inlineBody) {
+    modalBody.innerHTML = inlineBody.innerHTML;
+  }
+
+  // Aggiorna l'etichetta del contesto attivo in alto nella modale
+  const ctx = getChronosPageContext();
+  if (modalContextLabel) {
+    if (ctx.type === "lesson") {
+      modalContextLabel.innerHTML = `Stai studiando: <strong>${ctx.title}</strong>`;
+    } else if (ctx.type === "macroarea" || ctx.type === "epoca") {
+      modalContextLabel.innerHTML = `Sezione attiva: <strong>${ctx.title}</strong>`;
+    } else {
+      modalContextLabel.textContent = "Modalità Tutor Estesa • Historia Chronos";
+    }
+  }
+
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  modalBody.scrollTop = modalBody.scrollHeight;
+  setTimeout(() => document.getElementById("modalAiChatInput")?.focus(), 80);
+}
+
+function closeChronosModal() {
+  const modal = document.getElementById("chronosFullModal");
+  const inlineBody = document.getElementById("chatBody");
+  const modalBody = document.getElementById("modalChatBody");
+
+  if (inlineBody && modalBody) {
+    inlineBody.innerHTML = modalBody.innerHTML;
+    inlineBody.scrollTop = inlineBody.scrollHeight;
+  }
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+  document.body.style.overflow = "";
+}
+
+function initChronosFullModal() {
+  if (document.getElementById("chronosFullModal")) return;
+
+  const modal = document.createElement("div");
+  modal.id = "chronosFullModal";
+  modal.style.cssText = "display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(8, 10, 14, 0.86); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 16px;";
+
+  modal.innerHTML = `
+    <div style="width: 100%; max-width: 1120px; height: 88vh; background: #161920; border: 1px solid rgba(212, 175, 55, 0.45); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.75); display: flex; flex-direction: column; overflow: hidden;">
+      <!-- Header Modale -->
+      <div style="padding: 16px 22px; background: #111318; border-bottom: 1px solid rgba(212, 175, 55, 0.25); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="tutor-avatar" style="width: 42px; height: 42px; font-size: 1.3rem;">🤖</div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; color: #f5f6f8;">Chronos AI <span class="gold-text">Tutor Storico</span></h3>
+            <p id="chronosModalContextLabel" style="margin: 2px 0 0; font-size: 0.82rem; color: #a1a8b5;">Modalità Tutor Estesa</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button
+            type="button"
+            onclick="clearChronosChat()"
+            style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 7px 13px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;"
+          >
+            🗑️ Pulisci
+          </button>
+          <button
+            type="button"
+            onclick="closeChronosModal()"
+            style="background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5; padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer;"
+          >
+            ✕ Chiudi
+          </button>
+        </div>
       </div>
-    `;
-  } else {
-    chatBody.innerHTML = `
-      <div class="chat-msg ai-msg">
-        Chat azzerata! Sono <strong>Chronos AI</strong>, il tuo tutor storico. Chiedimi qualsiasi chiarimento, schema o domanda di ripasso!
+
+      <!-- Area Messaggi Espansa -->
+      <div
+        id="modalChatBody"
+        class="tutor-chat-body"
+        style="flex: 1; max-height: none; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; font-size: 1rem; line-height: 1.65;"
+      ></div>
+
+      <!-- Barra Input + Pulsanti Rapidi -->
+      <div style="padding: 14px 22px 18px; background: #111318; border-top: 1px solid rgba(212, 175, 55, 0.25);">
+        <form id="modalAiChatForm" onsubmit="handleChatSubmit(event, true)" style="display: flex; gap: 10px; margin-bottom: 12px;">
+          <input
+            type="text"
+            id="modalAiChatInput"
+            maxlength="450"
+            placeholder="Scrivi qui la tua domanda di storia, rispondi all'interrogazione o chiedi un approfondimento..."
+            style="flex: 1; background: #181b23; border: 1px solid rgba(212, 175, 55, 0.4); color: #f5f6f8; padding: 13px 16px; border-radius: 10px; font-size: 0.98rem; outline: none;"
+            required
+          />
+          <button
+            type="submit"
+            id="modalAiSendBtn"
+            style="background: #d4af37; color: #121418; font-weight: 700; border: none; padding: 0 24px; border-radius: 10px; font-size: 0.95rem; cursor: pointer;"
+          >
+            Invia ➤
+          </button>
+        </form>
+        <div class="tutor-quick-actions" style="margin-top: 0;">
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('explain', true)">💡 Spiegamelo meglio</button>
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('schema', true)">🗺️ Schema flash</button>
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('quiz', true)">📝 Interrogami</button>
+        </div>
       </div>
-    `;
+    </div>
+  `;
+
+  // Chiude cliccando sullo sfondo oscurato esterno o premendo ESC
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeChronosModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.style.display === "flex") closeChronosModal();
+  });
+
+  document.body.appendChild(modal);
+
+  // Intercetta tutti i link "Chronos AI" nella navbar (href="#ai-tutor") per aprire la finestra grande
+  document.querySelectorAll('a[href="#ai-tutor"]').forEach(link => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById("mobileDrawer")?.classList.remove("open");
+      openChronosModal();
+    });
+  });
+
+  // Aggiunge il bottone "⛶ Espandi" anche nell'header della chat di index.html se presente
+  const existingHeader = document.querySelector("#ai-tutor .tutor-header");
+  if (existingHeader && !existingHeader.querySelector("[onclick='openChronosModal()']")) {
+    const btnGroup = existingHeader.querySelector("div:last-child");
+    const expandBtn = document.createElement("button");
+    expandBtn.type = "button";
+    expandBtn.setAttribute("onclick", "openChronosModal()");
+    expandBtn.title = "Apri a schermo intero";
+    expandBtn.style.cssText = "background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.45); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; margin-right: 6px;";
+    expandBtn.textContent = "⛶ Espandi";
+
+    if (btnGroup && btnGroup.tagName === "BUTTON") {
+      btnGroup.parentNode.insertBefore(expandBtn, btnGroup);
+    } else {
+      existingHeader.appendChild(expandBtn);
+    }
   }
 }
 
-// Inizializza Chronos AI nelle lezioni + pulsante fluttuante al doppio clic/selezione testo
 document.addEventListener("DOMContentLoaded", () => {
   const lessonPane = document.querySelector(".lezione-content-pane");
   if (lessonPane && !document.getElementById("ai-tutor")) {
@@ -378,21 +531,31 @@ document.addEventListener("DOMContentLoaded", () => {
               <p>Hai dubbi su <strong>${lessonTitle}</strong>? Chiedi pure o mettiti alla prova!</p>
             </div>
           </div>
-          <button
-            type="button"
-            onclick="clearChronosChat()"
-            title="Inizia una nuova conversazione"
-            style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;"
-          >
-            🗑️ Pulisci
-          </button>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button
+              type="button"
+              onclick="openChronosModal()"
+              title="Apri a schermo intero"
+              style="background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.45); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;"
+            >
+              ⛶ Espandi
+            </button>
+            <button
+              type="button"
+              onclick="clearChronosChat()"
+              title="Inizia una nuova conversazione"
+              style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;"
+            >
+              🗑️ Pulisci
+            </button>
+          </div>
         </div>
         <div class="tutor-chat-body" id="chatBody">
           <div class="chat-msg ai-msg">
-            Ciao! Sono <strong>Chronos AI</strong>. Ho letto con te <strong>${lessonTitle}</strong>: premi <strong>Spiegamelo meglio</strong> per un chiarimento, <strong>Schema flash</strong> per la sintesi o <strong>Interrogami</strong> per un'interrogazione con voto! <em>(Suggerimento: fai doppio clic su qualsiasi parola del testo per chiedermene il significato).</em>
+            ${getChronosWelcomeHtml()}
           </div>
         </div>
-        <form id="aiChatForm" onsubmit="handleChatSubmit(event)" style="display: flex; gap: 10px; margin-top: 14px; margin-bottom: 12px;">
+        <form id="aiChatForm" onsubmit="handleChatSubmit(event, false)" style="display: flex; gap: 10px; margin-top: 14px; margin-bottom: 12px;">
           <input
             type="text"
             id="aiChatInput"
@@ -410,15 +573,16 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
         </form>
         <div class="tutor-quick-actions">
-          <button type="button" class="quick-btn" onclick="triggerSmartAction('explain')">💡 Spiegamelo meglio</button>
-          <button type="button" class="quick-btn" onclick="triggerSmartAction('schema')">🗺️ Schema flash</button>
-          <button type="button" class="quick-btn" onclick="triggerSmartAction('quiz')">📝 Interrogami</button>
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('explain', false)">💡 Spiegamelo meglio</button>
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('schema', false)">🗺️ Schema flash</button>
+          <button type="button" class="quick-btn" onclick="triggerSmartAction('quiz', false)">📝 Interrogami</button>
         </div>
       </div>
     `;
     lessonPane.appendChild(tutorSection);
   }
 
+  initChronosFullModal();
   initSelectionGlossaryPopup();
 });
 
@@ -438,7 +602,6 @@ function initSelectionGlossaryPopup() {
     const selection = window.getSelection();
     const text = selection ? selection.toString().trim() : "";
 
-    // Mostra il pulsante solo se la selezione è dentro il testo della lezione (non dentro la chat stessa)
     if (
       text.length >= 3 &&
       text.length <= 60 &&
@@ -467,11 +630,8 @@ function initSelectionGlossaryPopup() {
     popupBtn.style.display = "none";
     window.getSelection()?.removeAllRanges();
 
-    const tutorEl = document.getElementById("ai-tutor");
-    if (tutorEl) {
-      tutorEl.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-    sendQuickPrompt(`Spiegami brevemente il significato storico di "${selectedTerm}" nel contesto di questa lezione.`);
+    openChronosModal();
+    sendQuickPrompt(`Spiegami brevemente il significato storico di "${selectedTerm}" nel contesto di questa lezione.`, true);
   });
 }
 
@@ -529,31 +689,38 @@ function getChronosPageContext() {
   return { type: "home", title: "Historia Chronos" };
 }
 
-function sendQuickPrompt(text) {
-  const input = document.getElementById("aiChatInput");
-  if (!input || isChronosGenerating) return;
+function sendQuickPrompt(text, fromModal = false) {
+  if (isChronosGenerating) return;
+  const inputId = fromModal ? "modalAiChatInput" : "aiChatInput";
+  const input = document.getElementById(inputId);
+  if (!input) return;
   input.value = text;
-  handleChatSubmit(new Event("submit"));
+  handleChatSubmit(new Event("submit"), fromModal);
 }
 
-function triggerSmartAction(mode) {
+function triggerSmartAction(mode, fromModal = false) {
   if (isChronosGenerating) return;
   if (mode === "explain") {
-    sendQuickPrompt("Spiegamelo meglio");
+    sendQuickPrompt("Spiegamelo meglio", fromModal);
   } else if (mode === "schema") {
-    sendQuickPrompt("Schema flash");
+    sendQuickPrompt("Schema flash", fromModal);
   } else if (mode === "quiz") {
-    sendQuickPrompt("Interrogami");
+    sendQuickPrompt("Interrogami", fromModal);
   }
 }
 
-async function handleChatSubmit(event) {
+async function handleChatSubmit(event, fromModal = false) {
   event.preventDefault();
   if (isChronosGenerating) return;
 
-  const input = document.getElementById("aiChatInput");
-  const chatBody = document.getElementById("chatBody");
-  const sendBtn = document.getElementById("aiSendBtn");
+  const isModalOpen = document.getElementById("chronosFullModal")?.style.display === "flex";
+  const useModal = fromModal || isModalOpen;
+
+  const input = document.getElementById(useModal ? "modalAiChatInput" : "aiChatInput");
+  const chatBody = document.getElementById(useModal ? "modalChatBody" : "chatBody");
+  const sendBtn = document.getElementById(useModal ? "modalAiSendBtn" : "aiSendBtn");
+  if (!input || !chatBody) return;
+
   const message = input.value.trim();
   if (!message) return;
 
@@ -565,8 +732,10 @@ async function handleChatSubmit(event) {
 
   input.value = "";
   isChronosGenerating = true;
-  sendBtn.disabled = true;
-  sendBtn.style.opacity = "0.6";
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = "0.6";
+  }
 
   const aiDiv = document.createElement("div");
   aiDiv.className = "chat-msg ai-msg";
@@ -634,8 +803,18 @@ async function handleChatSubmit(event) {
     aiDiv.textContent = "Errore di connessione con Chronos AI. Riprova tra poco.";
   } finally {
     isChronosGenerating = false;
-    sendBtn.disabled = false;
-    sendBtn.style.opacity = "1";
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.style.opacity = "1";
+    }
     chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Mantiene sincronizzate entrambe le chat (modale e fondo pagina)
+    const inlineBody = document.getElementById("chatBody");
+    const modalBody = document.getElementById("modalChatBody");
+    if (inlineBody && modalBody) {
+      if (useModal) inlineBody.innerHTML = modalBody.innerHTML;
+      else modalBody.innerHTML = inlineBody.innerHTML;
+    }
   }
 }
