@@ -9746,12 +9746,22 @@ Hai presente quando ascolti un dibattito economico o leggi un articolo di giorna
 <!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->
 <section class="ai-tutor-section" id="ai-tutor">
   <div class="tutor-card">
-    <div class="tutor-header">
-      <div class="tutor-avatar">🤖</div>
-      <div>
-        <h3>Chronos AI <span class="gold-text">Tutor Storico</span></h3>
-        <p>Hai domande su un'epoca, un evento o un personaggio storico?</p>
+    <div class="tutor-header" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="tutor-avatar">🤖</div>
+        <div>
+          <h3>Chronos AI <span class="gold-text">Tutor Storico</span></h3>
+          <p>Hai domande su un'epoca, un evento o un personaggio storico?</p>
+        </div>
       </div>
+      <button
+        type="button"
+        onclick="clearChronosChat()"
+        title="Inizia una nuova conversazione"
+        style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.35); color: #f3e5ab; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;"
+      >
+        🗑️ Pulisci
+      </button>
     </div>
 
     <div class="tutor-chat-body" id="chatBody">
