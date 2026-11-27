@@ -260,6 +260,34 @@ function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
   const resetBtn = document.getElementById(resetBtnId) || (quizBox ? quizBox.querySelector('button[onclick*="resetQuiz"]') : null);
   if (resetBtn) resetBtn.style.display = 'inline-block';
 }
+function resetQuiz(containerId, lezioneNum, btnElement) {
+  let container = document.getElementById(containerId);
+  if (!container && btnElement) {
+    container = btnElement.closest('.lezione-section-box') || btnElement.parentElement;
+  }
+  if (!container && typeof event !== 'undefined' && event && event.target) {
+    container = event.target.closest('.lezione-section-box') || event.target.parentElement;
+  }
+  if (!container) return;
+
+  const allBtns = container.querySelectorAll('.quiz-opt-btn');
+  const allFeedbacks = container.querySelectorAll('.quiz-feedback');
+
+  allBtns.forEach(btn => {
+    btn.style.pointerEvents = 'auto';
+    btn.style.backgroundColor = 'var(--bg-card)';
+    btn.style.borderColor = 'var(--border-gold)';
+  });
+
+  allFeedbacks.forEach(fb => {
+    fb.style.display = 'none';
+    fb.innerHTML = '';
+  });
+
+  const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + String(lezioneNum || '').replace('.', '-');
+  const resetBtn = document.getElementById(resetBtnId) || container.querySelector('button[onclick*="resetQuiz"]');
+  if (resetBtn) resetBtn.style.display = 'none';
+}
 
 
 function switchEpoca(epoca, btn) {
