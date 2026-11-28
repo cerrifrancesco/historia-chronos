@@ -17,6 +17,7 @@ function saveActiveViewState(viewId) {
 function syncContentViews() {
   const viewProgramma = document.getElementById('viewProgramma');
   const viewMegaAree = document.getElementById('viewMegaAree');
+  const viewAtlante = document.getElementById('viewAtlante');
 
   if (viewProgramma) {
     const isProgActive = viewProgramma.classList.contains('active');
@@ -27,8 +28,58 @@ function syncContentViews() {
     const isMegaActive = viewMegaAree.classList.contains('active');
     viewMegaAree.classList.toggle('hidden', !isMegaActive);
   }
+
+  if (viewAtlante) {
+    const isAtlanteActive = viewAtlante.classList.contains('active');
+    viewAtlante.classList.toggle('hidden', !isAtlanteActive);
+  }
 }
 
+function exitMegaAreaFocusMode() {
+  const hero = document.getElementById('hero');
+  if (hero) hero.style.display = '';
+
+  const backBtn = document.getElementById('headerMegaBackBtn');
+  if (backBtn) backBtn.style.display = 'none';
+
+  document.querySelectorAll('.view-screen').forEach(el => {
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+  });
+}
+
+function returnToMegaAreeHub() {
+  exitMegaAreaFocusMode();
+  const btnMegaAree = document.getElementById('btnMegaAree');
+  if (btnMegaAree) btnMegaAree.click();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function enterMegaAreaFocusMode() {
+  const hero = document.getElementById('hero');
+  if (hero) hero.style.display = 'none';
+
+  const headerContainer = document.querySelector('.main-header .header-container');
+  if (!headerContainer) return;
+
+  let backBtn = document.getElementById('headerMegaBackBtn');
+  if (!backBtn) {
+    backBtn = document.createElement('button');
+    backBtn.id = 'headerMegaBackBtn';
+    backBtn.type = 'button';
+    backBtn.innerHTML = '← Torna alle Mega Aree';
+    backBtn.style.cssText = 'background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.5); color: #f3e5ab; padding: 7px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-left: auto; margin-right: 12px; transition: all 0.2s;';
+    backBtn.addEventListener('click', returnToMegaAreeHub);
+
+    const desktopNav = headerContainer.querySelector('.desktop-nav');
+    if (desktopNav) {
+      headerContainer.insertBefore(backBtn, desktopNav);
+    } else {
+      headerContainer.appendChild(backBtn);
+    }
+  }
+  backBtn.style.display = 'inline-flex';
+}
 
 function initNavigation() {
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -64,6 +115,10 @@ function initPathwaySwitcher() {
 
   function activateMegaAree() {
     if (!btnMegaAree || !btnProgramma || !viewMegaAree || !viewProgramma) return;
+    const btnAtlante = document.getElementById('btnAtlante');
+    const viewAtlante = document.getElementById('viewAtlante');
+
+    exitMegaAreaFocusMode();
 
     try {
       sessionStorage.removeItem('chronos_return_epoca');
@@ -72,14 +127,14 @@ function initPathwaySwitcher() {
 
     btnMegaAree.classList.add('active');
     btnProgramma.classList.remove('active');
-
-    document.querySelectorAll('.view-screen').forEach(el => {
-      el.classList.add('hidden');
-      el.classList.remove('flex');
-    });
+    if (btnAtlante) btnAtlante.classList.remove('active');
 
     viewProgramma.classList.remove('active');
     viewProgramma.classList.add('hidden');
+    if (viewAtlante) {
+      viewAtlante.classList.remove('active');
+      viewAtlante.classList.add('hidden');
+    }
 
     viewMegaAree.classList.remove('hidden');
     viewMegaAree.classList.add('active');
@@ -90,6 +145,10 @@ function initPathwaySwitcher() {
 
   function activateProgramma() {
     if (!btnMegaAree || !btnProgramma || !viewMegaAree || !viewProgramma) return;
+    const btnAtlante = document.getElementById('btnAtlante');
+    const viewAtlante = document.getElementById('viewAtlante');
+
+    exitMegaAreaFocusMode();
 
     try {
       sessionStorage.setItem('chronos_active_view', 'viewProgramma');
@@ -97,14 +156,14 @@ function initPathwaySwitcher() {
 
     btnProgramma.classList.add('active');
     btnMegaAree.classList.remove('active');
-
-    document.querySelectorAll('.view-screen').forEach(el => {
-      el.classList.add('hidden');
-      el.classList.remove('flex');
-    });
+    if (btnAtlante) btnAtlante.classList.remove('active');
 
     viewMegaAree.classList.remove('active');
     viewMegaAree.classList.add('hidden');
+    if (viewAtlante) {
+      viewAtlante.classList.remove('active');
+      viewAtlante.classList.add('hidden');
+    }
 
     viewProgramma.classList.remove('hidden');
     viewProgramma.classList.add('active');
@@ -131,7 +190,6 @@ function initPathwaySwitcher() {
     });
   }
 }
-
 
 // === NAVIGAZIONE DI RITORNO INTELLIGENTE PER EPOCA ===
 function detectEraFromLessonContext() {
@@ -370,12 +428,13 @@ function resetQuiz(containerId, lezioneNum, btnElement) {
   const resetBtn = document.getElementById(resetBtnId) || container.querySelector('button[onclick*="resetQuiz"]');
   if (resetBtn) resetBtn.style.display = 'none';
 }
-
 function switchEpoca(epoca, btn) {
   if (!['antica', 'medievale', 'moderna', 'contemporanea'].includes(epoca)) {
     epoca = 'antica';
   }
   epocaAttivaId = 'grid-' + epoca;
+
+  exitMegaAreaFocusMode();
 
   try {
     sessionStorage.setItem('chronos_return_epoca', epoca);
@@ -389,12 +448,17 @@ function switchEpoca(epoca, btn) {
 
   const viewProgramma = document.getElementById('viewProgramma');
   const viewMegaAree = document.getElementById('viewMegaAree');
+  const viewAtlante = document.getElementById('viewAtlante');
   const btnProgramma = document.getElementById('btnProgramma');
   const btnMegaAree = document.getElementById('btnMegaAree');
+  const btnAtlante = document.getElementById('btnAtlante');
+
   if (viewProgramma) viewProgramma.classList.add('active');
   if (viewMegaAree) viewMegaAree.classList.remove('active');
+  if (viewAtlante) viewAtlante.classList.remove('active');
   if (btnProgramma) btnProgramma.classList.add('active');
   if (btnMegaAree) btnMegaAree.classList.remove('active');
+  if (btnAtlante) btnAtlante.classList.remove('active');
 
   const gridContainer = document.getElementById('epocheGridsContainer');
   if (gridContainer) gridContainer.style.display = 'block';
@@ -508,17 +572,21 @@ function closeAllDropdowns() {
 function showView(viewId) {
   const viewProg = document.getElementById('viewProgramma');
   const viewMega = document.getElementById('viewMegaAree');
+  const viewAtl = document.getElementById('viewAtlante');
   if (viewProg) viewProg.classList.remove('active');
   if (viewMega) viewMega.classList.remove('active');
+  if (viewAtl) viewAtl.classList.remove('active');
 
   document.querySelectorAll('.view-screen').forEach(el => {
     el.classList.add('hidden');
     el.classList.remove('flex');
   });
+
   const target = document.getElementById(viewId);
   if (target) {
     target.classList.remove('hidden');
     target.classList.add('flex');
+    enterMegaAreaFocusMode();
     saveActiveViewState(viewId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
