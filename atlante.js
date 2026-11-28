@@ -93,30 +93,29 @@ let currentContinentFilter = null; // null = schermata iniziale
 
     
 
-    function showIntroHome() {
-      currentContinentFilter = null;
-      currentAmericasSubFilter = 'all';
-      document.getElementById('nationDetailView').style.display = 'none';
-      document.getElementById('homeNationView').style.display = 'block';
-      document.querySelectorAll('.continent-btn').forEach(btn => btn.classList.remove('active'));
-      const subbar = document.getElementById('americasSubbar');
-      if (subbar) subbar.classList.remove('show');
-      const antarcticaBox = document.getElementById('antarcticaBox');
-      if (antarcticaBox) antarcticaBox.style.display = 'none';
-      document.getElementById('nationsGrid').style.display = 'none';
-      document.getElementById('introExplorerBox').style.display = 'block';
-      populateSubareaSelect(nationsData);
-    document.querySelectorAll('.mode-switch-btn').forEach(btn => btn.classList.remove('active'));
-    const btnWorld = document.getElementById('btnModeWorld');
-    if (btnWorld) btnWorld.classList.add('active');
-    const continentsBar = document.getElementById('continentsBar');
-    if (continentsBar) continentsBar.style.display = '';
-    const currScreen = document.getElementById('currenciesScreen');
-    if (currScreen) currScreen.style.display = 'none';
+    function showIntroHome(triggerBtn) {
+  currentContinentFilter = null;
+  currentAmericasSubFilter = 'all';
 
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('nationDetailView').style.display = 'none';
+  document.getElementById('homeNationView').style.display = 'block';
 
-    }
+  document.querySelectorAll('.continent-btn').forEach(btn => btn.classList.remove('active'));
+  const btn = triggerBtn || document.querySelector('#continentsBar .continent-btn');
+  if (btn) btn.classList.add('active');
+
+  const subbar = document.getElementById('americasSubbar');
+  if (subbar) subbar.classList.remove('show');
+  const antarcticaBox = document.getElementById('antarcticaBox');
+  if (antarcticaBox) antarcticaBox.style.display = 'none';
+  const currScreen = document.getElementById('currenciesScreen');
+  if (currScreen) currScreen.style.display = 'none';
+
+  document.getElementById('nationsGrid').style.display = 'none';
+  document.getElementById('introExplorerBox').style.display = 'block';
+  populateSubareaSelect(nationsData);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
     function filterContinent(continent, triggerBtn) {
       currentContinentFilter = continent;
