@@ -63,8 +63,6 @@ function syncContentViews() {
   }
 }
 
-
-
 function exitMegaAreaFocusMode() {
   const hero = document.getElementById('hero');
   if (hero) hero.style.display = '';
@@ -599,6 +597,67 @@ function closeAllDropdowns() {
   });
 });
 
+function ensureEconomiaSubViewBackBtn(targetEl, viewId) {
+  if (!targetEl || viewId === 'view-home') return;
+
+  // Controlla se è una sotto-vista dell'area Economia
+  const isEconomiaSubView =
+    /^view-fase\d+$/i.test(viewId) ||
+    /^view-lezione-1-\d+/i.test(viewId) ||
+    /^view-economia-/i.test(viewId);
+
+  if (!isEconomiaSubView) return;
+
+  // Evita duplicati se la barra esiste già
+  if (targetEl.querySelector('.auto-economia-topbar')) return;
+
+  let badgeLabel = 'Macroarea Economia';
+  const faseMatch = viewId.match(/^view-fase(\d+)$/i);
+  const lezMatch = viewId.match(/^view-lezione-1-(\d+)/i);
+  const romanNumerals = { '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V' };
+
+  if (faseMatch) {
+    const num = faseMatch[1];
+    badgeLabel = `Fase ${romanNumerals[num] || num} • Economia`;
+  } else if (lezMatch) {
+    badgeLabel = `Lezione 1.${lezMatch[1]} • Economia`;
+  }
+
+  const innerContainer = targetEl.firstElementChild || targetEl;
+
+  // Barra superiore con linea divisoria gialla/oro come nelle altre macroaree
+  const topBar = document.createElement('div');
+  topBar.className = 'auto-economia-topbar';
+  topBar.style.cssText =
+    'width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 16px; margin-bottom: 24px; border-bottom: 1px solid rgba(212, 175, 55, 0.35);';
+
+  const backBtn = document.createElement('button');
+  backBtn.type = 'button';
+  backBtn.className = 'auto-economia-back-btn';
+  backBtn.innerHTML = '← Torna alla Macroarea Economia';
+  backBtn.style.cssText =
+    'background: #1a1d24; border: 1px solid rgba(212, 175, 55, 0.45); color: #f3e5ab; padding: 8px 16px; border-radius: 9999px; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;';
+
+  backBtn.addEventListener('mouseenter', () => {
+    backBtn.style.borderColor = '#d4af37';
+    backBtn.style.background = 'rgba(212, 175, 55, 0.14)';
+  });
+  backBtn.addEventListener('mouseleave', () => {
+    backBtn.style.borderColor = 'rgba(212, 175, 55, 0.45)';
+    backBtn.style.background = '#1a1d24';
+  });
+  backBtn.addEventListener('click', () => showView('view-home'));
+
+  const rightBadge = document.createElement('span');
+  rightBadge.textContent = badgeLabel;
+  rightBadge.style.cssText =
+    'background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.4); color: #f3e5ab; padding: 6px 14px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;';
+
+  topBar.appendChild(backBtn);
+  topBar.appendChild(rightBadge);
+  innerContainer.insertBefore(topBar, innerContainer.firstChild);
+}
+
 function showView(viewId) {
   const viewProg = document.getElementById('viewProgramma');
   const viewMega = document.getElementById('viewMegaAree');
@@ -616,6 +675,7 @@ function showView(viewId) {
   if (target) {
     target.classList.remove('hidden');
     target.classList.add('flex');
+    ensureEconomiaSubViewBackBtn(target, viewId);
     enterMegaAreaFocusMode();
     saveActiveViewState(viewId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
