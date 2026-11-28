@@ -103,16 +103,16 @@
         <p style="color: var(--text-muted);">Atlante geopolitico, storico ed enciclopedico delle nazioni del mondo.</p>
       </div>
 
-      <!-- Filtri per Continente -->
-      <div class="continent-filters" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
-        <button class="filter-btn active" onclick="showIntroHome(this)">🌍 Home / Mappe</button>
-        <button class="filter-btn" onclick="filterContinent('all', this)">Tutti i Continenti</button>
-        <button class="filter-btn" onclick="filterContinent('Europa', this)">Europa</button>
-        <button class="filter-btn" onclick="filterContinent('Asia', this)">Asia</button>
-        <button class="filter-btn" onclick="filterContinent('Americhe', this)">Americhe</button>
-        <button class="filter-btn" onclick="filterContinent('Africa', this)">Africa</button>
-        <button class="filter-btn" onclick="filterContinent('Oceania', this)">Oceania</button>
-        <button class="filter-btn" onclick="filterContinent('Antartide', this)">Antartide</button>
+      <!-- Filtri per Continente (con pulsante Home / Mappe incluso) -->
+      <div class="continent-filters" id="continentsBar" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
+        <button class="continent-btn active" onclick="showIntroHome(this)">🌍 Home / Mappe</button>
+        <button class="continent-btn" id="btnAllContinents" onclick="filterContinent('all', this)">Tutti i Continenti</button>
+        <button class="continent-btn" onclick="filterContinent('Europa', this)">Europa</button>
+        <button class="continent-btn" onclick="filterContinent('Asia', this)">Asia</button>
+        <button class="continent-btn" onclick="filterContinent('Americhe', this)">Americhe</button>
+        <button class="continent-btn" onclick="filterContinent('Africa', this)">Africa</button>
+        <button class="continent-btn" onclick="filterContinent('Oceania', this)">Oceania</button>
+        <button class="continent-btn" onclick="filterContinent('Antartide', this)">Antartide</button>
       </div>
 
       <!-- Sotto-filtri visibili solo quando si seleziona Americhe -->
@@ -166,7 +166,7 @@
         </div>
 
         <div class="intro-cta-bar">
-          <button class="intro-start-btn" onclick="filterContinent('all', document.querySelector('#continentsBar .continent-btn'))">
+          <button class="intro-start-btn" onclick="filterContinent('all', document.getElementById('btnAllContinents'))">
             Esplora tutte le nazioni →
           </button>
         </div>
