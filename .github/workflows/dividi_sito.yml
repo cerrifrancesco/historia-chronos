@@ -1,35 +1,101 @@
-name: Genera Atlante JS
-on:
-  workflow_dispatch:
+import re
 
-permissions:
-  contents: write
+# Leggi i due file originali (modifica i nomi se necessario)
+with open("index.html", "r", encoding="utf-8") as f:
+    idx = f.read()
 
-jobs:
-  build-js:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Unisci dati nazioni e logica monete in atlante.js
-        run: |
-          python3 -c '
-          with open("_materiale_agente/2_dati_nazioni.js", "r", encoding="utf-8") as f:
-              part1 = f.read()
-          with open("_materiale_agente/3_logica_monete.js", "r", encoding="utf-8") as f:
-              part2 = f.read()
+with open("atlante.html", "r", encoding="utf-8") as f:
+    atl = f.read()
 
-          # Pulisce eventuali tag <script> o </body> residui dai due file
-          for tag in ["<script>", "</script>", "</body>", "</html>"]:
-              part1 = part1.replace(tag, "")
-              part2 = part2.replace(tag, "")
+# 1. Estrai il contenuto interno di <main id="atlante-content"> da atlante.html
+match_main = re.search(
+    r'<main[^>]*id="atlante-content"[^>]*>(.*?)</main>', atl, re.DOTALL
+)
+if not match_main:
+    raise ValueError("Impossibile trovare <main id='atlante-content'> in atlante.html")
+atlante_inner_html = match_main.group(1).strip()
 
-          with open("atlante.js", "w", encoding="utf-8") as out:
-              out.write(part1.strip() + "\n\n" + part2.strip() + "\n")
-          '
-      - name: Commit atlante.js
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add atlante.js
-          git commit -m "Creato atlante.js da 2_dati_nazioni e 3_logica_monete" || exit 0
-          git push
+# 2. Aggiungi D3, TopoJSON e atlante.css nella <head> di index.html
+head_injection = """  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <link href="atlante.css" rel="stylesheet"/>
+</head>"""
+idx = idx.replace("</head>", head_injection, 1)
+
+# 3. Trasforma il link <a href="atlante.html"> nella hero in un <button id="btnAtlante">
+old_atlante_btn_pattern = r'<a[^>]*href="atlante\.html"[^>]*>.*?</a>'
+new_atlante_btn = """<button class="path-btn" id="btnAtlante">
+<span class="btn-icon">🌍</span> Atlante &amp; Monete
+      </button>"""
+idx = re.sub(old_atlante_btn_pattern, new_atlante_btn, idx, count=1, flags=re.DOTALL)
+
+# 4. Inserisci la nuova <section class="content-view" id="viewAtlante"> subito prima del Tutor AI
+view_atlante_block = f"""
+<!-- VIEW 3: ATLANTE & MONETE -->
+<section class="content-view" id="viewAtlante">
+  <div id="atlante-content">
+{atlante_inner_html}
+  </div>
+</section>
+<!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->"""
+
+if "<!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->" in idx:
+    idx = idx.replace("<!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->", view_atlante_block, 1)
+else:
+    idx = idx.replace('<section class="ai-tutor-section"', view_atlante_block + '\n<section class="ai-tutor-section"', 1)
+
+# 5. Aggiungi atlante.js e il gestore del tab Atlante prima di </body>
+scripts_injection = """<script src="atlante.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const btnProgramma = document.getElementById("btnProgramma");
+    const btnMegaAree = document.getElementById("btnMegaAree");
+    const btnAtlante = document.getElementById("btnAtlante");
+
+    const viewProgramma = document.getElementById("viewProgramma");
+    const viewMegaAree = document.getElementById("viewMegaAree");
+    const viewAtlante = document.getElementById("viewAtlante");
+
+    function activateAtlanteView() {
+      if (btnProgramma) btnProgramma.classList.remove("active");
+      if (btnMegaAree) btnMegaAree.classList.remove("active");
+      if (btnAtlante) btnAtlante.classList.add("active");
+
+      if (viewProgramma) viewProgramma.classList.remove("active");
+      if (viewMegaAree) viewMegaAree.classList.remove("active");
+      if (viewAtlante) viewAtlante.classList.add("active");
+
+      // Ridisegna eventuali mappe D3 che erano nascoste (display: none) al caricamento
+      window.dispatchEvent(new Event("resize"));
+    }
+
+    if (btnAtlante) {
+      btnAtlante.addEventListener("click", activateAtlanteView);
+    }
+
+    // Se l'utente clicca su Programma o Mega Aree, assicurati che Atlante si nasconda e perda lo stato active
+    [btnProgramma, btnMegaAree].forEach(btn => {
+      if (btn) {
+        btn.addEventListener("click", function () {
+          if (btnAtlante) btnAtlante.classList.remove("active");
+          if (viewAtlante) viewAtlante.classList.remove("active");
+        });
+      }
+    });
+
+    // Supporto apertura diretta via URL (?tab=atlante)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "atlante") {
+      activateAtlanteView();
+    }
+  });
+</script>
+</body>"""
+
+idx = idx.replace("</body>", scripts_injection, 1)
+
+# Salva il risultato in un nuovo file pronto per il test
+with open("index_unito.html", "w", encoding="utf-8") as f:
+    f.write(idx)
+
+print("Fatto! Creato 'index_unito.html' con successo.")
