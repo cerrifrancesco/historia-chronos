@@ -19,12 +19,16 @@ function syncContentViews() {
   const viewMegaAree = document.getElementById('viewMegaAree');
 
   if (viewProgramma) {
-    viewProgramma.style.display = viewProgramma.classList.contains('active') ? 'block' : 'none';
+    const isProgActive = viewProgramma.classList.contains('active');
+    viewProgramma.classList.toggle('hidden', !isProgActive);
   }
+
   if (viewMegaAree) {
-    viewMegaAree.style.display = viewMegaAree.classList.contains('active') ? 'block' : 'none';
+    const isMegaActive = viewMegaAree.classList.contains('active');
+    viewMegaAree.classList.toggle('hidden', !isMegaActive);
   }
 }
+
 
 function initNavigation() {
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
