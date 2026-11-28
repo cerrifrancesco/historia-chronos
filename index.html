@@ -9998,15 +9998,32 @@ Hai presente quando ascolti un dibattito economico o leggi un articolo di giorna
     const viewMegaAree = document.getElementById("viewMegaAree");
     const viewAtlante = document.getElementById("viewAtlante");
 
-    function activateAtlanteView() {
+        function activateAtlanteView() {
+      if (typeof exitMegaAreaFocusMode === "function") {
+        exitMegaAreaFocusMode();
+      }
+
       if (btnProgramma) btnProgramma.classList.remove("active");
       if (btnMegaAree) btnMegaAree.classList.remove("active");
       if (btnAtlante) btnAtlante.classList.add("active");
 
-      if (viewProgramma) viewProgramma.classList.remove("active");
-      if (viewMegaAree) viewMegaAree.classList.remove("active");
-      if (viewAtlante) viewAtlante.classList.add("active");
+      if (viewProgramma) {
+        viewProgramma.classList.remove("active");
+        viewProgramma.classList.add("hidden");
+      }
+      if (viewMegaAree) {
+        viewMegaAree.classList.remove("active");
+        viewMegaAree.classList.add("hidden");
+      }
+      if (viewAtlante) {
+        viewAtlante.classList.remove("hidden");
+        viewAtlante.classList.add("active");
+        viewAtlante.style.display = "block";
+      }
 
+      if (typeof syncContentViews === "function") {
+        syncContentViews();
+      }
       window.dispatchEvent(new Event("resize"));
     }
 
@@ -10018,7 +10035,11 @@ Hai presente quando ascolti un dibattito economico o leggi un articolo di giorna
       if (btn) {
         btn.addEventListener("click", function () {
           if (btnAtlante) btnAtlante.classList.remove("active");
-          if (viewAtlante) viewAtlante.classList.remove("active");
+          if (viewAtlante) {
+            viewAtlante.classList.remove("active");
+            viewAtlante.classList.add("hidden");
+            viewAtlante.style.display = "none";
+          }
         });
       }
     });
@@ -10028,6 +10049,7 @@ Hai presente quando ascolti un dibattito economico o leggi un articolo di giorna
       activateAtlanteView();
     }
   });
+    
 </script>
 </body>
 </html>
