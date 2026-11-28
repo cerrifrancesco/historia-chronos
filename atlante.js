@@ -91,8 +91,6 @@ let currentContinentFilter = null; // null = schermata iniziale
       }
     }
 
-    
-
     function showIntroHome(triggerBtn) {
   currentContinentFilter = null;
   currentAmericasSubFilter = 'all';
@@ -101,8 +99,8 @@ let currentContinentFilter = null; // null = schermata iniziale
   document.getElementById('homeNationView').style.display = 'block';
 
   document.querySelectorAll('.continent-btn').forEach(btn => btn.classList.remove('active'));
-  const btn = triggerBtn || document.querySelector('#continentsBar .continent-btn');
-  if (btn) btn.classList.add('active');
+  const homeBtn = triggerBtn || document.getElementById('btnHomeExplorer');
+  if (homeBtn) homeBtn.classList.add('active');
 
   const subbar = document.getElementById('americasSubbar');
   if (subbar) subbar.classList.remove('show');
@@ -113,9 +111,14 @@ let currentContinentFilter = null; // null = schermata iniziale
 
   document.getElementById('nationsGrid').style.display = 'none';
   document.getElementById('introExplorerBox').style.display = 'block';
-  populateSubareaSelect(nationsData);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (typeof populateSubareaSelect === 'function') {
+    populateSubareaSelect(nationsData);
+  }
 }
+
+
+    
 
     function filterContinent(continent, triggerBtn) {
       currentContinentFilter = continent;
