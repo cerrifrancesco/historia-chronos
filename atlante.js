@@ -1,97 +1,71 @@
 let currentContinentFilter = null; // null = schermata iniziale
-    let currentAmericasSubFilter = 'all';
+let currentAmericasSubFilter = 'all';
+let currenciesMapInitialized = false;
 
-    function normalizeText(str) {
-      return (str || '')
-        .toString()
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
-    }
+function normalizeText(str) {
+  return (str || '')
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
 
-    function getCardHighlightTag(nation) {
-      if (nation.region && nation.region.includes('/')) {
-        return nation.region.split('/').pop().trim();
-      }
-      if (nation.region) return nation.region.trim();
-      if (nation.language) return nation.language.split(',')[0].trim();
-      return nation.continent;
-    }
+function getCardHighlightTag(nation) {
+  if (nation.region && nation.region.includes('/')) {
+    return nation.region.split('/').pop().trim();
+  }
+  if (nation.region) return nation.region.trim();
+  if (nation.language) return nation.language.split(',')[0].trim();
+  return nation.continent;
+}
 
-    function renderNations(data) {
-      const grid = document.getElementById('nationsGrid');
-      grid.innerHTML = '';
-    function sortNationsAlphabetically(list) {
-      return [...list].sort((a, b) =>
-        (a.name || '').localeCompare(b.name || '', 'it', { sensitivity: 'base' })
-      );
-    }
+function sortNationsAlphabetically(list) {
+  return [...list].sort((a, b) =>
+    (a.name || '').localeCompare(b.name || '', 'it', { sensitivity: 'base' })
+  );
+}
 
-    function renderNations(data) {
-      const grid = document.getElementById('nationsGrid');
-      grid.innerHTML = '';
+function renderNations(data) {
+  const grid = document.getElementById('nationsGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
 
-      const sortedData = sortNationsAlphabetically(data);
+  const sortedData = sortNationsAlphabetically(data);
 
-      if (!sortedData.length) {
-        grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 30px;">Nessuna nazione trovata con i filtri selezionati.</div>`;
-        return;
-      }
+  if (!sortedData.length) {
+    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 30px;">Nessuna nazione trovata con i filtri selezionati.</div>`;
+    return;
+  }
 
-      sortedData.forEach(nation => {
-        const card = document.createElement('div');
-        card.className = 'nation-card';
-        card.onclick = () => openNationDetail(nation.id);
-        const badgeText = getCardHighlightTag(nation);
-        card.innerHTML = `
-          <img src="${nation.flagImg}" alt="${nation.name}" class="nation-flag-thumb">
-          <div class="nation-info">
-            <h4>${nation.name}</h4>
-            <span>${nation.continent} • ${nation.capital}</span>
-            <div><span class="nation-badge-pill">${badgeText}</span></div>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-    }
-      if (!data.length) {
-        grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 30px;">Nessuna nazione trovata con i filtri selezionati.</div>`;
-        return;
-      }
+  sortedData.forEach(nation => {
+    const card = document.createElement('div');
+    card.className = 'nation-card';
+    card.onclick = () => openNationDetail(nation.id);
+    const badgeText = getCardHighlightTag(nation);
+    card.innerHTML = `
+      <img src="${nation.flagImg}" alt="${nation.name}" class="nation-flag-thumb">
+      <div class="nation-info">
+        <h4>${nation.name}</h4>
+        <span>${nation.continent} • ${nation.capital}</span>
+        <div><span class="nation-badge-pill">${badgeText}</span></div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
 
-      data.forEach(nation => {
-        const card = document.createElement('div');
-        card.className = 'nation-card';
-        card.onclick = () => openNationDetail(nation.id);
-        const badgeText = getCardHighlightTag(nation);
-        card.innerHTML = `
-          <img src="${nation.flagImg}" alt="${nation.name}" class="nation-flag-thumb">
-          <div class="nation-info">
-            <h4>${nation.name}</h4>
-            <span>${nation.continent} • ${nation.capital}</span>
-            <div><span class="nation-badge-pill">${badgeText}</span></div>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-    }
+function populateSubareaSelect(baseList) {
+  const select = document.getElementById('subareaFilterSelect');
+  if (!select) return;
+  const previous = select.value;
+  const tags = Array.from(new Set(baseList.map(n => getCardHighlightTag(n)).filter(Boolean))).sort();
+  select.innerHTML = `<option value="all">Tutte le sotto-aree / lingue (${baseList.length})</option>` +
+    tags.map(t => `<option value="${t.replace(/"/g, '&quot;')}">${t}</option>`).join('');
+  select.value = tags.includes(previous) ? previous : 'all';
+}
 
-    function populateSubareaSelect(baseList) {
-      const select = document.getElementById('subareaFilterSelect');
-      if (!select) return;
-      const previous = select.value;
-      const tags = Array.from(new Set(baseList.map(n => getCardHighlightTag(n)).filter(Boolean))).sort();
-      select.innerHTML = `<option value="all">Tutte le sotto-aree / lingue (${baseList.length})</option>` +
-        tags.map(t => `<option value="${t.replace(/"/g, '&quot;')}">${t}</option>`).join('');
-      if (tags.includes(previous)) {
-        select.value = previous;
-      } else {
-        select.value = 'all';
-      }
-    }
-
-    function showIntroHome(triggerBtn) {
+function showIntroHome(triggerBtn) {
   currentContinentFilter = null;
   currentAmericasSubFilter = 'all';
 
@@ -99,7 +73,7 @@ let currentContinentFilter = null; // null = schermata iniziale
   document.getElementById('homeNationView').style.display = 'block';
 
   document.querySelectorAll('.continent-btn').forEach(btn => btn.classList.remove('active'));
-  const homeBtn = triggerBtn || document.getElementById('btnHomeExplorer');
+  const homeBtn = triggerBtn || document.querySelector('#continentsBar .continent-btn');
   if (homeBtn) homeBtn.classList.add('active');
 
   const subbar = document.getElementById('americasSubbar');
@@ -117,56 +91,54 @@ let currentContinentFilter = null; // null = schermata iniziale
   }
 }
 
+function filterContinent(continent, triggerBtn) {
+  currentContinentFilter = continent;
+  currentAmericasSubFilter = 'all';
+  document.querySelectorAll('.continent-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = triggerBtn || (window.event && window.event.currentTarget);
+  if (activeBtn) activeBtn.classList.add('active');
 
-    
+  const introBox = document.getElementById('introExplorerBox');
+  if (introBox) introBox.style.display = 'none';
 
-    function filterContinent(continent, triggerBtn) {
-      currentContinentFilter = continent;
-      currentAmericasSubFilter = 'all';
-      document.querySelectorAll('.continent-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = triggerBtn || (window.event && window.event.currentTarget);
-      if (activeBtn) activeBtn.classList.add('active');
+  const subbar = document.getElementById('americasSubbar');
+  const grid = document.getElementById('nationsGrid');
+  const antarcticaBox = document.getElementById('antarcticaBox');
 
-      const introBox = document.getElementById('introExplorerBox');
-      if (introBox) introBox.style.display = 'none';
+  if (continent === 'Americhe') {
+    if (antarcticaBox) antarcticaBox.style.display = 'none';
+    if (grid) grid.style.display = 'grid';
+    if (subbar) subbar.classList.add('show');
+    document.querySelectorAll('.subcontinent-btn').forEach(b => b.classList.remove('active'));
+    const subBtnAll = document.getElementById('subBtnAll');
+    if (subBtnAll) subBtnAll.classList.add('active');
+    populateSubareaSelect(nationsData.filter(n => n.continent === 'Americhe'));
+    applyNationFilters();
+  } else if (continent === 'Antartide') {
+    if (subbar) subbar.classList.remove('show');
+    if (grid) grid.style.display = 'none';
+    if (antarcticaBox) antarcticaBox.style.display = 'block';
+  } else {
+    if (subbar) subbar.classList.remove('show');
+    if (antarcticaBox) antarcticaBox.style.display = 'none';
+    if (grid) grid.style.display = 'grid';
+    const base = continent === 'all' ? nationsData : nationsData.filter(n => n.continent === continent);
+    populateSubareaSelect(base);
+    applyNationFilters();
+  }
+}
 
-      const subbar = document.getElementById('americasSubbar');
-      const grid = document.getElementById('nationsGrid');
-      const antarcticaBox = document.getElementById('antarcticaBox');
+function filterAmericasSub(subarea, triggerBtn) {
+  currentAmericasSubFilter = subarea;
+  document.querySelectorAll('.subcontinent-btn').forEach(btn => btn.classList.remove('active'));
+  if (triggerBtn) triggerBtn.classList.add('active');
+  const base = subarea === 'all'
+    ? nationsData.filter(n => n.continent === 'Americhe')
+    : nationsData.filter(n => n.continent === 'Americhe' && getAmericaSubarea(n) === subarea);
+  populateSubareaSelect(base);
+  applyNationFilters();
+}
 
-      if (continent === 'Americhe') {
-        if (antarcticaBox) antarcticaBox.style.display = 'none';
-        if (grid) grid.style.display = 'grid';
-        if (subbar) subbar.classList.add('show');
-        document.querySelectorAll('.subcontinent-btn').forEach(b => b.classList.remove('active'));
-        const subBtnAll = document.getElementById('subBtnAll');
-        if (subBtnAll) subBtnAll.classList.add('active');
-        populateSubareaSelect(nationsData.filter(n => n.continent === 'Americhe'));
-        applyNationFilters();
-      } else if (continent === 'Antartide') {
-        if (subbar) subbar.classList.remove('show');
-        if (grid) grid.style.display = 'none';
-        if (antarcticaBox) antarcticaBox.style.display = 'block';
-      } else {
-        if (subbar) subbar.classList.remove('show');
-        if (antarcticaBox) antarcticaBox.style.display = 'none';
-        if (grid) grid.style.display = 'grid';
-        const base = continent === 'all' ? nationsData : nationsData.filter(n => n.continent === continent);
-        populateSubareaSelect(base);
-        applyNationFilters();
-      }
-    }
-
-    function filterAmericasSub(subarea, triggerBtn) {
-      currentAmericasSubFilter = subarea;
-      document.querySelectorAll('.subcontinent-btn').forEach(btn => btn.classList.remove('active'));
-      if (triggerBtn) triggerBtn.classList.add('active');
-      const base = subarea === 'all'
-        ? nationsData.filter(n => n.continent === 'Americhe')
-        : nationsData.filter(n => n.continent === 'Americhe' && getAmericaSubarea(n) === subarea);
-      populateSubareaSelect(base);
-      applyNationFilters();
-    }
 
         const MAP_NAME_TO_ID = {
       'afghanistan': 'afghanistan',
