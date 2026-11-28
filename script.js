@@ -14,6 +14,18 @@ function saveActiveViewState(viewId) {
   } catch (_) {}
 }
 
+function syncContentViews() {
+  const viewProgramma = document.getElementById('viewProgramma');
+  const viewMegaAree = document.getElementById('viewMegaAree');
+
+  if (viewProgramma) {
+    viewProgramma.style.display = viewProgramma.classList.contains('active') ? 'block' : 'none';
+  }
+  if (viewMegaAree) {
+    viewMegaAree.style.display = viewMegaAree.classList.contains('active') ? 'block' : 'none';
+  }
+}
+
 function initNavigation() {
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
   const closeDrawerBtn = document.getElementById('closeDrawer');
@@ -47,6 +59,7 @@ function initPathwaySwitcher() {
   }
 
   updateMappeNavVisibility();
+  syncContentViews();
 
   if (btnMegaAree && btnProgramma && viewMegaAree && viewProgramma) {
     btnMegaAree.addEventListener('click', () => {
@@ -60,6 +73,7 @@ function initPathwaySwitcher() {
       viewProgramma.classList.remove('active');
       saveActiveViewState('viewMegaAree');
       updateMappeNavVisibility();
+      syncContentViews();
     });
 
     btnProgramma.addEventListener('click', () => {
@@ -73,6 +87,7 @@ function initPathwaySwitcher() {
       viewMegaAree.classList.remove('active');
       saveActiveViewState('viewProgramma');
       updateMappeNavVisibility();
+      syncContentViews();
     });
   }
 }
@@ -224,28 +239,32 @@ const quizDatabase = {
 
 function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
   const itemContainer = document.getElementById(itemId) || btnElement.closest('div[id]') || btnElement.parentElement.parentElement;
-  const feedbackBox = document.getElementById('feedback-' + itemId) || itemContainer.querySelector('.quiz-feedback');
-  const allBtns = itemContainer.querySelectorAll('.quiz-opt-btn');
+  const feedbackBox = document.getElementById('feedback-' + itemId) || (itemContainer ? itemContainer.querySelector('.quiz-feedback') : null);
+  const allBtns = itemContainer ? itemContainer.querySelectorAll('.quiz-opt-btn') : [];
 
   let detectedCorrectBtn = null;
   let detectedCorrectOpt = null;
+  let detectedCorrectText = '';
+
   allBtns.forEach((btn, idx) => {
     const onclickAttr = btn.getAttribute('onclick') || '';
     if (/checkAnswer\s*\(\s*this\s*,\s*true\b/.test(onclickAttr)) {
       detectedCorrectBtn = btn;
       const letterMatch = onclickAttr.match(/['"]([A-D])['"]/);
       detectedCorrectOpt = letterMatch ? letterMatch[1] : String.fromCharCode(65 + idx);
+      detectedCorrectText = btn.textContent.trim();
     }
   });
 
-  const data = quizDatabase[itemId] || {
-    correctOpt: detectedCorrectOpt || 'B',
-    explanation: 'Risposta registrata correttamente nel sistema Historia Chronos.'
-  };
+  const dbEntry = quizDatabase[itemId];
+  const finalCorrectOpt = detectedCorrectOpt || (dbEntry && dbEntry.correctOpt) || '';
+  const explanationHtml = (dbEntry && dbEntry.explanation)
+    ? `<br><em>Spiegazione:</em> ${dbEntry.explanation}`
+    : '';
 
-  const finalCorrectOpt = detectedCorrectOpt || data.correctOpt;
-
-  allBtns.forEach(btn => btn.style.pointerEvents = 'none');
+  allBtns.forEach(btn => {
+    btn.style.pointerEvents = 'none';
+  });
 
   if (feedbackBox) {
     feedbackBox.style.display = 'block';
@@ -254,7 +273,7 @@ function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
       btnElement.style.backgroundColor = 'rgba(34, 197, 94, 0.3)';
       btnElement.style.borderColor = '#22c55e';
       feedbackBox.className = 'quiz-feedback correct';
-      feedbackBox.innerHTML = `<strong>CORRETTO!!! 🎉</strong><br>${data.explanation}`;
+      feedbackBox.innerHTML = `<strong>CORRETTO! 🎉</strong>${explanationHtml}`;
     } else {
       btnElement.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
       btnElement.style.borderColor = '#ef4444';
@@ -263,12 +282,20 @@ function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
         detectedCorrectBtn.style.borderColor = '#22c55e';
       }
       feedbackBox.className = 'quiz-feedback wrong';
-      feedbackBox.innerHTML = `<strong>SBAGLIATO! ❌</strong><br><strong>La risposta corretta era la ${finalCorrectOpt}.</strong><br><em>Spiegazione:</em> ${data.explanation}`;
+
+      let correctLabel = '';
+      if (detectedCorrectText) {
+        correctLabel = `<strong>Risposta corretta:</strong> ${detectedCorrectText}`;
+      } else if (finalCorrectOpt) {
+        correctLabel = `<strong>Risposta corretta:</strong> opzione ${finalCorrectOpt}`;
+      }
+
+      feedbackBox.innerHTML = `<strong>SBAGLIATO! ❌</strong>${correctLabel ? `<br>${correctLabel}` : ''}${explanationHtml}`;
     }
   }
 
   const resetBtnId = lezioneNum === '1.1' ? 'reset-quiz-1' : 'reset-quiz-' + String(lezioneNum || '').replace('.', '-');
-  const quizBox = itemContainer.closest('.lezione-section-box') || itemContainer.parentElement;
+  const quizBox = itemContainer ? (itemContainer.closest('.lezione-section-box') || itemContainer.parentElement) : null;
   const resetBtn = document.getElementById(resetBtnId) || (quizBox ? quizBox.querySelector('button[onclick*="resetQuiz"]') : null);
   if (resetBtn) resetBtn.style.display = 'inline-block';
 }
@@ -288,12 +315,13 @@ function resetQuiz(containerId, lezioneNum, btnElement) {
 
   allBtns.forEach(btn => {
     btn.style.pointerEvents = 'auto';
-    btn.style.backgroundColor = 'var(--bg-card)';
-    btn.style.borderColor = 'var(--border-gold)';
+    btn.style.backgroundColor = '';
+    btn.style.borderColor = '';
   });
 
   allFeedbacks.forEach(fb => {
     fb.style.display = 'none';
+    fb.className = 'quiz-feedback';
     fb.innerHTML = '';
   });
 
@@ -343,6 +371,8 @@ function switchEpoca(epoca, btn) {
 
   const detailContainer = document.getElementById('lezioneDetailContainer');
   if (detailContainer) detailContainer.style.display = 'none';
+
+  syncContentViews();
 }
 
 function openLezioneDetail(lezioneId) {
@@ -451,6 +481,8 @@ function showView(viewId) {
     saveActiveViewState(viewId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  syncContentViews();
 }
 
 function showHome() {
@@ -690,8 +722,12 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => switchEpoca(savedEpoca), 100);
       } else if (savedView && savedView !== 'viewProgramma' && document.getElementById(savedView)) {
         setTimeout(() => showView(savedView), 100);
+      } else {
+        syncContentViews();
       }
-    } catch (_) {}
+    } catch (_) {
+      syncContentViews();
+    }
   }
 });
 
