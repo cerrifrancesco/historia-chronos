@@ -62,39 +62,76 @@ function initPathwaySwitcher() {
     if (mobileNavMappe) mobileNavMappe.style.display = isProgrammaActive ? '' : 'none';
   }
 
+  function activateMegaAree() {
+    if (!btnMegaAree || !btnProgramma || !viewMegaAree || !viewProgramma) return;
+
+    try {
+      sessionStorage.removeItem('chronos_return_epoca');
+      sessionStorage.setItem('chronos_active_view', 'viewMegaAree');
+    } catch (_) {}
+
+    btnMegaAree.classList.add('active');
+    btnProgramma.classList.remove('active');
+
+    document.querySelectorAll('.view-screen').forEach(el => {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    });
+
+    viewProgramma.classList.remove('active');
+    viewProgramma.classList.add('hidden');
+
+    viewMegaAree.classList.remove('hidden');
+    viewMegaAree.classList.add('active');
+
+    updateMappeNavVisibility();
+    syncContentViews();
+  }
+
+  function activateProgramma() {
+    if (!btnMegaAree || !btnProgramma || !viewMegaAree || !viewProgramma) return;
+
+    try {
+      sessionStorage.setItem('chronos_active_view', 'viewProgramma');
+    } catch (_) {}
+
+    btnProgramma.classList.add('active');
+    btnMegaAree.classList.remove('active');
+
+    document.querySelectorAll('.view-screen').forEach(el => {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    });
+
+    viewMegaAree.classList.remove('active');
+    viewMegaAree.classList.add('hidden');
+
+    viewProgramma.classList.remove('hidden');
+    viewProgramma.classList.add('active');
+
+    updateMappeNavVisibility();
+    syncContentViews();
+  }
+
   updateMappeNavVisibility();
   syncContentViews();
 
-  if (btnMegaAree && btnProgramma && viewMegaAree && viewProgramma) {
-    btnMegaAree.addEventListener('click', () => {
-      btnMegaAree.classList.add('active');
-      btnProgramma.classList.remove('active');
-      document.querySelectorAll('.view-screen').forEach(el => {
-        el.classList.add('hidden');
-        el.classList.remove('flex');
-      });
-      viewMegaAree.classList.add('active');
-      viewProgramma.classList.remove('active');
-      saveActiveViewState('viewMegaAree');
-      updateMappeNavVisibility();
-      syncContentViews();
+  if (btnMegaAree) {
+    btnMegaAree.addEventListener('click', (e) => {
+      e.preventDefault();
+      activateMegaAree();
+      setTimeout(activateMegaAree, 120);
     });
+  }
 
-    btnProgramma.addEventListener('click', () => {
-      btnProgramma.classList.add('active');
-      btnMegaAree.classList.remove('active');
-      document.querySelectorAll('.view-screen').forEach(el => {
-        el.classList.add('hidden');
-        el.classList.remove('flex');
-      });
-      viewProgramma.classList.add('active');
-      viewMegaAree.classList.remove('active');
-      saveActiveViewState('viewProgramma');
-      updateMappeNavVisibility();
-      syncContentViews();
+  if (btnProgramma) {
+    btnProgramma.addEventListener('click', (e) => {
+      e.preventDefault();
+      activateProgramma();
     });
   }
 }
+
 
 // === NAVIGAZIONE DI RITORNO INTELLIGENTE PER EPOCA ===
 function detectEraFromLessonContext() {
