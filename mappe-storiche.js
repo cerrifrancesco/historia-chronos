@@ -3,7 +3,6 @@
 const LAND_BASE_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson";
 const HIST_BASE_URL = "https://raw.githubusercontent.com/aourednik/historical-basemaps/master/geojson/";
 
-// Partiamo da 4 tappe chiave per testare e ampliare facilmente in seguito
 const HISTORICAL_STAGES = [
   {
     yearLabel: "3000 a.C.",
@@ -23,6 +22,26 @@ const HISTORICAL_STAGES = [
     markers: [
       { name: "Ur e Uruk", coords: [45.6, 31.3], info: "Culla della scrittura cuneiforme e delle Ziggurat" },
       { name: "Menfi e Tebe", coords: [31.5, 26.8], info: "Centro del Regno dei Faraoni lungo il Nilo" }
+    ]
+  },
+  {
+    yearLabel: "480 a.C.",
+    title: "Grecia Classica e Impero Persiano",
+    era: "antica",
+    eraLabel: "Età Antica",
+    geoUrl: HIST_BASE_URL + "world_bc500.geojson",
+    center: [34, 35],
+    zoom: 3.3,
+    lessonUrl: "index.html?lezione=1.6",
+    lessonText: "📖 Vai alla Lezione 1.6",
+    description: "Le poleis greche guidate da Atene e Sparta affrontano l'espansione dell'Impero Persiano Achemenide nelle grandi battaglie di Maratona, Termopili e Salamina.",
+    regions: [
+      { match: ["greek", "greece", "athens", "sparta"], name: "Poleis Greche", color: "#3b82f6" },
+      { match: ["persi", "achaemenid"], name: "Impero Persiano Achemenide", color: "#facc15" }
+    ],
+    markers: [
+      { name: "Atene & Salamina", coords: [23.7, 37.9], info: "Cuore della democrazia ateniese e vittoria navale del 480 a.C." },
+      { name: "Persepoli", coords: [52.8, 29.9], info: "Capitale cerimoniale dell'Impero Persiano" }
     ]
   },
   {
@@ -66,6 +85,66 @@ const HISTORICAL_STAGES = [
     ]
   },
   {
+    yearLabel: "476 d.C.",
+    title: "Caduta dell'Occidente e Regni Romano-Barbarici",
+    era: "antica",
+    eraLabel: "Età Antica",
+    geoUrl: HIST_BASE_URL + "world_400.geojson",
+    center: [16, 43],
+    zoom: 3.1,
+    lessonUrl: "index.html?lezione=1.15",
+    lessonText: "📖 Vai alla Lezione 1.15",
+    description: "Con la deposizione di Romolo Augustolo nel 476 d.C. tramonta l'Impero Romano d'Occidente e si affermano i Regni Romano-Barbarici, mentre l'Oriente prosegue a Costantinopoli.",
+    regions: [
+      { match: ["western roman", "visigoth", "ostrogoth", "vandal", "frank"], name: "Occidente e Regni Romano-Barbarici", color: "#f59e0b" },
+      { match: ["eastern roman", "byzantine"], name: "Impero Romano d'Oriente", color: "#a855f7" }
+    ],
+    markers: [
+      { name: "Ravenna", coords: [12.2, 44.4], info: "Ultima capitale dell'Impero Romano d'Occidente" },
+      { name: "Costantinopoli", coords: [28.9, 41.0], info: "Capitale dell'Impero d'Oriente" }
+    ]
+  },
+  {
+    yearLabel: "800 d.C.",
+    title: "Il Sacro Romano Impero di Carlo Magno",
+    era: "medievale",
+    eraLabel: "Età Medievale",
+    geoUrl: HIST_BASE_URL + "world_800.geojson",
+    center: [12, 46],
+    zoom: 3.3,
+    lessonUrl: "index.html?epoca=medievale#percorsi",
+    lessonText: "📖 Esplora Età Medievale",
+    description: "Nella notte di Natale dell'800 Carlo Magno viene incoronato imperatore: nasce il Sacro Romano Impero, che unifica gran parte dell'Europa centro-occidentale.",
+    regions: [
+      { match: ["frank", "carolingian"], name: "Impero Carolingio", color: "#facc15" },
+      { match: ["byzantine"], name: "Impero Bizantino", color: "#a855f7" },
+      { match: ["abbasid", "umayyad", "andalus"], name: "Mondo Islamico", color: "#22c55e" }
+    ],
+    markers: [
+      { name: "Aquisgrana", coords: [6.08, 50.77], info: "Sede della corte di Carlo Magno" },
+      { name: "Roma", coords: [12.5, 41.9], info: "Incoronazione imperiale dell'800" }
+    ]
+  },
+  {
+    yearLabel: "1348",
+    title: "Commerci Mediterranei e la Peste Nera",
+    era: "medievale",
+    eraLabel: "Età Medievale",
+    geoUrl: HIST_BASE_URL + "world_1300.geojson",
+    center: [18, 43],
+    zoom: 3.1,
+    lessonUrl: "index.html?epoca=medievale#percorsi",
+    lessonText: "📖 Esplora Età Medievale",
+    description: "Lungo le rotte commerciali tra Mar Nero, Mediterraneo ed Europa si diffonde la Peste Nera del 1347-1348, con profonde conseguenze demografiche ed economiche.",
+    regions: [
+      { match: ["venice", "genoa", "france", "england", "holy roman", "castile", "aragon", "byzantine"], name: "Aree Europee e Mediterranee", color: "#ef4444" }
+    ],
+    markers: [
+      { name: "Caffa", coords: [35.3, 45.0], info: "Scoglio commerciale sul Mar Nero legato alla diffusione del contagio" },
+      { name: "Venezia & Genova", coords: [12.3, 45.4], info: "Grandi rotte marittime del Basso Medioevo" }
+    ]
+  },
+  {
     yearLabel: "1492",
     title: "Scoperte Geografiche ed Espansione Atlantica",
     era: "moderna",
@@ -84,6 +163,85 @@ const HISTORICAL_STAGES = [
     markers: [
       { name: "Siviglia & Lisbona", coords: [-6.0, 37.3], info: "Porti principali delle esplorazioni atlantiche" },
       { name: "San Salvador", coords: [-74.5, 24.0], info: "Primo approdo di Colombo nell'ottobre 1492" }
+    ]
+  },
+  {
+    yearLabel: "1815",
+    title: "L'Europa dopo Napoleone e il Congresso di Vienna",
+    era: "moderna",
+    eraLabel: "Età Moderna",
+    geoUrl: HIST_BASE_URL + "world_1815.geojson",
+    center: [14, 48],
+    zoom: 3.2,
+    lessonUrl: "index.html?epoca=moderna#percorsi",
+    lessonText: "📖 Esplora Età Moderna",
+    description: "Dopo la sconfitta di Napoleone, le potenze europee ridisegnano l'assetto continentale al Congresso di Vienna inaugurando l'età della Restaurazione.",
+    regions: [
+      { match: ["austrian", "prussia", "russian", "france", "united kingdom", "britain"], name: "Grandi Potenze Europee", color: "#3b82f6" },
+      { match: ["italy", "sardinia", "papal", "two sicilies"], name: "Stati della Penisola Italiana", color: "#facc15" }
+    ],
+    markers: [
+      { name: "Vienna", coords: [16.37, 48.2], info: "Sede del Congresso (1814-1815)" },
+      { name: "Waterloo", coords: [4.4, 50.68], info: "Sconfitta definitiva di Napoleone nel 1815" }
+    ]
+  },
+  {
+    yearLabel: "1914",
+    title: "La Prima Guerra Mondiale: Alleanze in Campo",
+    era: "contemporanea",
+    eraLabel: "Età Contemporanea",
+    geoUrl: HIST_BASE_URL + "world_1914.geojson",
+    center: [16, 48],
+    zoom: 3.0,
+    lessonUrl: "index.html?epoca=contemporanea#percorsi",
+    lessonText: "📖 Esplora Età Contemporanea",
+    description: "Nell'estate del 1914 il sistema delle alleanze trasforma una crisi balcanica in un conflitto globale tra Intesa e Imperi Centrali.",
+    regions: [
+      { match: ["france", "united kingdom", "britain", "russia", "serbia", "belgium"], name: "Intesa e Alleati Iniziali", color: "#3b82f6" },
+      { match: ["german", "austria", "ottoman"], name: "Imperi Centrali", color: "#ef4444" }
+    ],
+    markers: [
+      { name: "Sarajevo", coords: [18.4, 43.85], info: "Attentato del 28 giugno 1914 che fa scattare la crisi" },
+      { name: "Berlino", coords: [13.4, 52.52], info: "Centro dell'Impero Tedesco" }
+    ]
+  },
+  {
+    yearLabel: "1945",
+    title: "Fine della Seconda Guerra Mondiale e Nuovo Assetto",
+    era: "contemporanea",
+    eraLabel: "Età Contemporanea",
+    geoUrl: HIST_BASE_URL + "world_1945.geojson",
+    center: [15, 42],
+    zoom: 2.3,
+    lessonUrl: "index.html?epoca=contemporanea#percorsi",
+    lessonText: "📖 Esplora Età Contemporanea",
+    description: "Con la fine del conflitto nel 1945 si chiude l'epoca dei regimi fascisti e nazisti in Europa e si aprono i nuovi equilibri mondiali.",
+    regions: [
+      { match: ["united states", "america", "united kingdom", "britain", "france", "italy"], name: "Alleati Occidentali", color: "#3b82f6" },
+      { match: ["soviet", "ussr", "russia"], name: "Unione Sovietica", color: "#ef4444" }
+    ],
+    markers: [
+      { name: "Berlino", coords: [13.4, 52.52], info: "Punto simbolico della fine della guerra in Europa" },
+      { name: "Yalta", coords: [34.16, 44.49], info: "Conferenza sul dopoguerra (febbraio 1945)" }
+    ]
+  },
+  {
+    yearLabel: "1992",
+    title: "Nascita dell'Unione Europea (Trattato di Maastricht)",
+    era: "contemporanea",
+    eraLabel: "Età Contemporanea",
+    geoUrl: HIST_BASE_URL + "world_1994.geojson",
+    center: [12, 49],
+    zoom: 3.3,
+    lessonUrl: "index.html?epoca=contemporanea#percorsi",
+    lessonText: "📖 Esplora Età Contemporanea",
+    description: "Dopo la fine della Guerra Fredda, il Trattato di Maastricht del 1992 segna una tappa decisiva nell'integrazione europea.",
+    regions: [
+      { match: ["italy", "france", "germany", "spain", "portugal", "belgium", "netherlands", "luxembourg", "ireland", "united kingdom", "britain", "denmark", "greece"], name: "Paesi Europei Protagonisti", color: "#facc15" }
+    ],
+    markers: [
+      { name: "Maastricht", coords: [5.69, 50.85], info: "Firma del Trattato istitutivo dell'Unione Europea (1992)" },
+      { name: "Bruxelles", coords: [4.35, 50.85], info: "Cuore istituzionale europeo" }
     ]
   }
 ];
@@ -143,7 +301,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   d3Svg.call(d3Zoom);
 
-  // Carica terre emerse pulite (senza confini nazionali moderni)
   try {
     const landData = await d3.json(LAND_BASE_URL);
     landLayer.selectAll("path")
