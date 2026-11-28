@@ -19,18 +19,19 @@ function syncContentViews() {
   const viewMegaAree = document.getElementById('viewMegaAree');
   const viewAtlante = document.getElementById('viewAtlante');
 
+  const isProgActive = viewProgramma ? viewProgramma.classList.contains('active') : false;
+  const isMegaActive = viewMegaAree ? viewMegaAree.classList.contains('active') : false;
+  const isAtlanteActive = viewAtlante ? viewAtlante.classList.contains('active') : false;
+
   if (viewProgramma) {
-    const isProgActive = viewProgramma.classList.contains('active');
     viewProgramma.classList.toggle('hidden', !isProgActive);
   }
 
   if (viewMegaAree) {
-    const isMegaActive = viewMegaAree.classList.contains('active');
     viewMegaAree.classList.toggle('hidden', !isMegaActive);
   }
 
   if (viewAtlante) {
-    const isAtlanteActive = viewAtlante.classList.contains('active');
     if (isAtlanteActive) {
       viewAtlante.classList.remove('hidden');
       viewAtlante.style.display = 'block';
@@ -39,7 +40,29 @@ function syncContentViews() {
       viewAtlante.style.display = 'none';
     }
   }
+
+  // Elementi da nascondere SOLO quando è attivo Atlante & Monete
+  const navMappe = document.getElementById('navMappeStoriche');
+  const mobileNavMappe = document.getElementById('mobileNavMappeStoriche');
+  const navChronosLinks = document.querySelectorAll('a[href="#ai-tutor"]');
+  const aiTutorSection = document.getElementById('ai-tutor');
+
+  if (navMappe) {
+    navMappe.style.display = isProgActive ? '' : 'none';
+  }
+  if (mobileNavMappe) {
+    mobileNavMappe.style.display = isProgActive ? '' : 'none';
+  }
+
+  navChronosLinks.forEach(link => {
+    link.style.display = isAtlanteActive ? 'none' : '';
+  });
+
+  if (aiTutorSection) {
+    aiTutorSection.style.display = isAtlanteActive ? 'none' : '';
+  }
 }
+
 
 
 function exitMegaAreaFocusMode() {
