@@ -31,9 +31,16 @@ function syncContentViews() {
 
   if (viewAtlante) {
     const isAtlanteActive = viewAtlante.classList.contains('active');
-    viewAtlante.classList.toggle('hidden', !isAtlanteActive);
+    if (isAtlanteActive) {
+      viewAtlante.classList.remove('hidden');
+      viewAtlante.style.display = 'block';
+    } else {
+      viewAtlante.classList.add('hidden');
+      viewAtlante.style.display = 'none';
+    }
   }
 }
+
 
 function exitMegaAreaFocusMode() {
   const hero = document.getElementById('hero');
