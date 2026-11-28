@@ -205,7 +205,10 @@
       display: none;
     }
     .content-view.active {
-      display: block;
+      display: block !important;
+    }
+    .content-view.hidden {
+      display: none !important;
     }
     .section-header {
       text-align: center;
