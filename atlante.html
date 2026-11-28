@@ -110,7 +110,7 @@
 
       <!-- Filtri per Continente (con pulsante Home / Mappe incluso) -->
       <div class="continent-filters" id="continentsBar" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
-        <button class="continent-btn active" onclick="showIntroHome(this)">🌍 Home / Mappe</button>
+        <button class="continent-btn active" id="btnHomeExplorer" onclick="showIntroHome(this)">Home</button>
         <button class="continent-btn" id="btnAllContinents" onclick="filterContinent('all', this)">Tutti i Continenti</button>
         <button class="continent-btn" onclick="filterContinent('Europa', this)">Europa</button>
         <button class="continent-btn" onclick="filterContinent('Asia', this)">Asia</button>
@@ -119,6 +119,7 @@
         <button class="continent-btn" onclick="filterContinent('Oceania', this)">Oceania</button>
         <button class="continent-btn" onclick="filterContinent('Antartide', this)">Antartide</button>
       </div>
+
 
       <!-- Sotto-filtri visibili solo quando si seleziona Americhe -->
       <div class="americas-subbar" id="americasSubbar">
