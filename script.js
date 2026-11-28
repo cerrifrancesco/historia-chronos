@@ -1,8 +1,18 @@
+let epocaAttivaId = 'grid-antica';
+
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initPathwaySwitcher();
   initSmartBackNavigation();
 });
+
+function saveActiveViewState(viewId) {
+  try {
+    if (viewId) {
+      sessionStorage.setItem('chronos_active_view', viewId);
+    }
+  } catch (_) {}
+}
 
 function initNavigation() {
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -48,6 +58,7 @@ function initPathwaySwitcher() {
       });
       viewMegaAree.classList.add('active');
       viewProgramma.classList.remove('active');
+      saveActiveViewState('viewMegaAree');
       updateMappeNavVisibility();
     });
 
@@ -60,6 +71,7 @@ function initPathwaySwitcher() {
       });
       viewProgramma.classList.add('active');
       viewMegaAree.classList.remove('active');
+      saveActiveViewState('viewProgramma');
       updateMappeNavVisibility();
     });
   }
@@ -106,7 +118,7 @@ function initSmartBackNavigation() {
   if (!isInLessonPage) return;
 
   const targetEpoca = detectEraFromLessonContext();
-    const activeLessonPane = document.querySelector('.lezione-content-pane');
+  const activeLessonPane = document.querySelector('.lezione-content-pane');
   if (activeLessonPane) {
     activeLessonPane.style.display = 'block';
   }
@@ -114,6 +126,7 @@ function initSmartBackNavigation() {
 
   try {
     sessionStorage.setItem('chronos_return_epoca', targetEpoca);
+    sessionStorage.setItem('chronos_active_view', 'viewProgramma');
   } catch (_) {}
 
   const backElements = document.querySelectorAll('.back-to-grid-btn, a[href*="index.html"]');
@@ -214,7 +227,6 @@ function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
   const feedbackBox = document.getElementById('feedback-' + itemId) || itemContainer.querySelector('.quiz-feedback');
   const allBtns = itemContainer.querySelectorAll('.quiz-opt-btn');
 
-  // Rileva dinamicamente quale bottone ha true nell'attributo onclick
   let detectedCorrectBtn = null;
   let detectedCorrectOpt = null;
   allBtns.forEach((btn, idx) => {
@@ -260,6 +272,7 @@ function checkAnswer(btnElement, isCorrect, itemId, selectedOpt, lezioneNum) {
   const resetBtn = document.getElementById(resetBtnId) || (quizBox ? quizBox.querySelector('button[onclick*="resetQuiz"]') : null);
   if (resetBtn) resetBtn.style.display = 'inline-block';
 }
+
 function resetQuiz(containerId, lezioneNum, btnElement) {
   let container = document.getElementById(containerId);
   if (!container && btnElement) {
@@ -289,7 +302,6 @@ function resetQuiz(containerId, lezioneNum, btnElement) {
   if (resetBtn) resetBtn.style.display = 'none';
 }
 
-
 function switchEpoca(epoca, btn) {
   if (!['antica', 'medievale', 'moderna', 'contemporanea'].includes(epoca)) {
     epoca = 'antica';
@@ -298,6 +310,7 @@ function switchEpoca(epoca, btn) {
 
   try {
     sessionStorage.setItem('chronos_return_epoca', epoca);
+    sessionStorage.setItem('chronos_active_view', 'viewProgramma');
   } catch (_) {}
 
   document.querySelectorAll('.tab-btn').forEach(b => {
@@ -307,8 +320,12 @@ function switchEpoca(epoca, btn) {
 
   const viewProgramma = document.getElementById('viewProgramma');
   const viewMegaAree = document.getElementById('viewMegaAree');
+  const btnProgramma = document.getElementById('btnProgramma');
+  const btnMegaAree = document.getElementById('btnMegaAree');
   if (viewProgramma) viewProgramma.classList.add('active');
   if (viewMegaAree) viewMegaAree.classList.remove('active');
+  if (btnProgramma) btnProgramma.classList.add('active');
+  if (btnMegaAree) btnMegaAree.classList.remove('active');
 
   const gridContainer = document.getElementById('epocheGridsContainer');
   if (gridContainer) gridContainer.style.display = 'block';
@@ -338,6 +355,7 @@ function openLezioneDetail(lezioneId) {
   }
   try {
     sessionStorage.setItem('chronos_return_epoca', epoca);
+    sessionStorage.setItem('chronos_active_view', 'viewProgramma');
   } catch (_) {}
 
   window.location.href = `lezioni/${lezioneId}.html?epoca=${epoca}`;
@@ -430,11 +448,16 @@ function showView(viewId) {
   if (target) {
     target.classList.remove('hidden');
     target.classList.add('flex');
+    saveActiveViewState(viewId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
 function showHome() {
+  try {
+    sessionStorage.removeItem('chronos_active_view');
+    sessionStorage.removeItem('chronos_return_epoca');
+  } catch (_) {}
   showView('view-home');
 }
 
@@ -639,7 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initChronosFullModal();
   initSelectionGlossaryPopup();
 
-  // Apertura automatica epoca o lezione da query string o sessionStorage
+  // Apertura automatica epoca o lezione da query string, oppure ripristino vista salvata al refresh
   const params = new URLSearchParams(window.location.search);
   const lezioneParam = params.get("lezione");
   const epocaParam = params.get("epoca");
@@ -660,9 +683,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 100);
   } else if (!window.location.pathname.includes('/lezioni/') && !document.querySelector('.lezione-content-pane')) {
     try {
+      const savedView = sessionStorage.getItem('chronos_active_view');
       const savedEpoca = sessionStorage.getItem('chronos_return_epoca');
-      if (savedEpoca && ['antica', 'medievale', 'moderna', 'contemporanea'].includes(savedEpoca)) {
+
+      if (savedView === 'viewProgramma' && savedEpoca && ['antica', 'medievale', 'moderna', 'contemporanea'].includes(savedEpoca)) {
         setTimeout(() => switchEpoca(savedEpoca), 100);
+      } else if (savedView && savedView !== 'viewProgramma' && document.getElementById(savedView)) {
+        setTimeout(() => showView(savedView), 100);
       }
     } catch (_) {}
   }
