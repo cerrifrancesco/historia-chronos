@@ -4225,3 +4225,34 @@ function applyNationFilters() {
           }));
         });
     }
+function switchAppMode(mode, triggerBtn) {
+  document.querySelectorAll('.mode-switch-btn').forEach(btn => btn.classList.remove('active'));
+  if (triggerBtn) triggerBtn.classList.add('active');
+
+  document.getElementById('nationDetailView').style.display = 'none';
+  document.getElementById('homeNationView').style.display = 'block';
+
+  if (mode === 'currency') {
+    document.getElementById('continentsBar').style.display = 'none';
+    document.getElementById('americasSubbar').classList.remove('show');
+    document.getElementById('explorerToolbar').style.display = 'none';
+    document.getElementById('introExplorerBox').style.display = 'none';
+    document.getElementById('nationsGrid').style.display = 'none';
+    document.getElementById('antarcticaBox').style.display = 'none';
+    document.getElementById('currenciesScreen').style.display = 'block';
+
+    if (!currenciesMapInitialized) {
+      initCurrenciesWorldMap();
+    }
+  } else {
+    document.getElementById('continentsBar').style.display = 'flex';
+    document.getElementById('explorerToolbar').style.display = '';
+    document.getElementById('currenciesScreen').style.display = 'none';
+    showIntroHome(document.querySelector('#continentsBar .continent-btn'));
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  showIntroHome(document.querySelector('#continentsBar .continent-btn'));
+});
+
