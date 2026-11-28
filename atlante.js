@@ -93,67 +93,51 @@ let currentContinentFilter = null; // null = schermata iniziale
 
     
 
-    function showIntroHome() {
-      currentContinentFilter = null;
-      currentAmericasSubFilter = 'all';
-      document.getElementById('nationDetailView').style.display = 'none';
-      document.getElementById('homeNationView').style.display = 'block';
-      document.querySelectorAll('.continent-btn').forEach(btn => btn.classList.remove('active'));
-      const subbar = document.getElementById('americasSubbar');
-      if (subbar) subbar.classList.remove('show');
-      const antarcticaBox = document.getElementById('antarcticaBox');
-      if (antarcticaBox) antarcticaBox.style.display = 'none';
-      document.getElementById('nationsGrid').style.display = 'none';
-      document.getElementById('introExplorerBox').style.display = 'block';
-      populateSubareaSelect(nationsData);
-    document.querySelectorAll('.mode-switch-btn').forEach(btn => btn.classList.remove('active'));
-    const btnWorld = document.getElementById('btnModeWorld');
-    if (btnWorld) btnWorld.classList.add('active');
-    const continentsBar = document.getElementById('continentsBar');
-    if (continentsBar) continentsBar.style.display = '';
-    const currScreen = document.getElementById('currenciesScreen');
-    if (currScreen) currScreen.style.display = 'none';
+    // 1. Pulsante "Home / Mappe": mostra il box introduttivo + Planisfero + Mappamondo 3D
+function showIntroHome(btnElement) {
+    currentContinent = 'all';
 
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    if (btnElement) btnElement.classList.add('active');
 
-    }
+    const currenciesScreen = document.getElementById('currenciesScreen');
+    const introBox = document.getElementById('introBox');
+    const mapsContainer = document.getElementById('mapsContainer');
+    const nationsGrid = document.getElementById('nationsGrid');
+    const noRes = document.getElementById('noResults');
 
-    function filterContinent(continent, triggerBtn) {
-      currentContinentFilter = continent;
-      currentAmericasSubFilter = 'all';
-      document.querySelectorAll('.continent-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = triggerBtn || (window.event && window.event.currentTarget);
-      if (activeBtn) activeBtn.classList.add('active');
+    if (currenciesScreen) currenciesScreen.style.display = 'none';
+    if (introBox) introBox.style.display = 'block';
+    if (mapsContainer) mapsContainer.style.display = 'grid';
+    if (nationsGrid) nationsGrid.style.display = 'none';
+    if (noRes) noRes.style.display = 'none';
 
-      const introBox = document.getElementById('introExplorerBox');
-      if (introBox) introBox.style.display = 'none';
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = '';
+    if (typeof populateSubareaSelect === 'function') populateSubareaSelect('all');
+}
 
-      const subbar = document.getElementById('americasSubbar');
-      const grid = document.getElementById('nationsGrid');
-      const antarcticaBox = document.getElementById('antarcticaBox');
+// 2. Pulsanti "Tutti i Continenti" ('all') e singoli Continenti ('Europa', 'Asia', ecc.)
+function filterContinent(continent, btnElement) {
+    currentContinent = continent;
 
-      if (continent === 'Americhe') {
-        if (antarcticaBox) antarcticaBox.style.display = 'none';
-        if (grid) grid.style.display = 'grid';
-        if (subbar) subbar.classList.add('show');
-        document.querySelectorAll('.subcontinent-btn').forEach(b => b.classList.remove('active'));
-        const subBtnAll = document.getElementById('subBtnAll');
-        if (subBtnAll) subBtnAll.classList.add('active');
-        populateSubareaSelect(nationsData.filter(n => n.continent === 'Americhe'));
-        applyNationFilters();
-      } else if (continent === 'Antartide') {
-        if (subbar) subbar.classList.remove('show');
-        if (grid) grid.style.display = 'none';
-        if (antarcticaBox) antarcticaBox.style.display = 'block';
-      } else {
-        if (subbar) subbar.classList.remove('show');
-        if (antarcticaBox) antarcticaBox.style.display = 'none';
-        if (grid) grid.style.display = 'grid';
-        const base = continent === 'all' ? nationsData : nationsData.filter(n => n.continent === continent);
-        populateSubareaSelect(base);
-        applyNationFilters();
-      }
-    }
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    if (btnElement) btnElement.classList.add('active');
+
+    const currenciesScreen = document.getElementById('currenciesScreen');
+    const introBox = document.getElementById('introBox');
+    const mapsContainer = document.getElementById('mapsContainer');
+    const nationsGrid = document.getElementById('nationsGrid');
+
+    if (currenciesScreen) currenciesScreen.style.display = 'none';
+    if (introBox) introBox.style.display = 'none';
+    if (mapsContainer) mapsContainer.style.display = 'none';
+    if (nationsGrid) nationsGrid.style.display = 'grid';
+
+    if (typeof populateSubareaSelect === 'function') populateSubareaSelect(continent);
+    if (typeof applyNationFilters === 'function') applyNationFilters();
+}
+
 
     function filterAmericasSub(subarea, triggerBtn) {
       currentAmericasSubFilter = subarea;
