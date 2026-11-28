@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <script>
+  window.onerror = function(msg, url, line, col) {
+    alert("ERRORE JS:\n" + msg + "\nRiga: " + line + " | Colonna: " + col);
+  };
+</script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
   <meta charset="UTF-8" />
