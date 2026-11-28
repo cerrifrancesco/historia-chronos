@@ -1,101 +1,122 @@
-import re
+name: Unisci Index e Atlante
 
-# Leggi i due file originali (modifica i nomi se necessario)
-with open("index.html", "r", encoding="utf-8") as f:
-    idx = f.read()
+on:
+  workflow_dispatch:
 
-with open("atlante.html", "r", encoding="utf-8") as f:
-    atl = f.read()
+permissions:
+  contents: write
 
-# 1. Estrai il contenuto interno di <main id="atlante-content"> da atlante.html
-match_main = re.search(
-    r'<main[^>]*id="atlante-content"[^>]*>(.*?)</main>', atl, re.DOTALL
-)
-if not match_main:
-    raise ValueError("Impossibile trovare <main id='atlante-content'> in atlante.html")
-atlante_inner_html = match_main.group(1).strip()
+jobs:
+  unisci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-# 2. Aggiungi D3, TopoJSON e atlante.css nella <head> di index.html
-head_injection = """  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
-  <link href="atlante.css" rel="stylesheet"/>
-</head>"""
-idx = idx.replace("</head>", head_injection, 1)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-# 3. Trasforma il link <a href="atlante.html"> nella hero in un <button id="btnAtlante">
-old_atlante_btn_pattern = r'<a[^>]*href="atlante\.html"[^>]*>.*?</a>'
-new_atlante_btn = """<button class="path-btn" id="btnAtlante">
-<span class="btn-icon">🌍</span> Atlante &amp; Monete
-      </button>"""
-idx = re.sub(old_atlante_btn_pattern, new_atlante_btn, idx, count=1, flags=re.DOTALL)
+      - name: Esegui unione file HTML
+        run: |
+          python - << 'EOF'
+          import re
 
-# 4. Inserisci la nuova <section class="content-view" id="viewAtlante"> subito prima del Tutor AI
-view_atlante_block = f"""
-<!-- VIEW 3: ATLANTE & MONETE -->
-<section class="content-view" id="viewAtlante">
-  <div id="atlante-content">
-{atlante_inner_html}
-  </div>
-</section>
-<!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->"""
+          with open("index.html", "r", encoding="utf-8") as f:
+              idx = f.read()
 
-if "<!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->" in idx:
-    idx = idx.replace("<!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->", view_atlante_block, 1)
-else:
-    idx = idx.replace('<section class="ai-tutor-section"', view_atlante_block + '\n<section class="ai-tutor-section"', 1)
+          with open("atlante.html", "r", encoding="utf-8") as f:
+              atl = f.read()
 
-# 5. Aggiungi atlante.js e il gestore del tab Atlante prima di </body>
-scripts_injection = """<script src="atlante.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const btnProgramma = document.getElementById("btnProgramma");
-    const btnMegaAree = document.getElementById("btnMegaAree");
-    const btnAtlante = document.getElementById("btnAtlante");
+          match_main = re.search(
+              r'<main[^>]*id="atlante-content"[^>]*>(.*?)</main>', atl, re.DOTALL
+          )
+          if not match_main:
+              raise ValueError("Impossibile trovare <main id='atlante-content'> in atlante.html")
+          atlante_inner_html = match_main.group(1).strip()
 
-    const viewProgramma = document.getElementById("viewProgramma");
-    const viewMegaAree = document.getElementById("viewMegaAree");
-    const viewAtlante = document.getElementById("viewAtlante");
+          head_injection = """  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+            <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+            <link href="atlante.css" rel="stylesheet"/>
+          </head>"""
+          idx = idx.replace("</head>", head_injection, 1)
 
-    function activateAtlanteView() {
-      if (btnProgramma) btnProgramma.classList.remove("active");
-      if (btnMegaAree) btnMegaAree.classList.remove("active");
-      if (btnAtlante) btnAtlante.classList.add("active");
+          old_atlante_btn_pattern = r'<a[^>]*href="atlante\.html"[^>]*>.*?</a>'
+          new_atlante_btn = """<button class="path-btn" id="btnAtlante">
+          <span class="btn-icon">🌍</span> Atlante &amp; Monete
+                </button>"""
+          idx = re.sub(old_atlante_btn_pattern, new_atlante_btn, idx, count=1, flags=re.DOTALL)
 
-      if (viewProgramma) viewProgramma.classList.remove("active");
-      if (viewMegaAree) viewMegaAree.classList.remove("active");
-      if (viewAtlante) viewAtlante.classList.add("active");
+          view_atlante_block = f"""
+          <!-- VIEW 3: ATLANTE & MONETE -->
+          <section class="content-view" id="viewAtlante">
+            <div id="atlante-content">
+          {atlante_inner_html}
+            </div>
+          </section>
+          <!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->"""
 
-      // Ridisegna eventuali mappe D3 che erano nascoste (display: none) al caricamento
-      window.dispatchEvent(new Event("resize"));
-    }
+          if "<!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->" in idx:
+              idx = idx.replace("<!-- TUTOR AI (SEMPRE VISIBILE IN FONDO) -->", view_atlante_block, 1)
+          else:
+              idx = idx.replace('<section class="ai-tutor-section"', view_atlante_block + '\n<section class="ai-tutor-section"', 1)
 
-    if (btnAtlante) {
-      btnAtlante.addEventListener("click", activateAtlanteView);
-    }
+          scripts_injection = """<script src="atlante.js"></script>
+          <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              const btnProgramma = document.getElementById("btnProgramma");
+              const btnMegaAree = document.getElementById("btnMegaAree");
+              const btnAtlante = document.getElementById("btnAtlante");
 
-    // Se l'utente clicca su Programma o Mega Aree, assicurati che Atlante si nasconda e perda lo stato active
-    [btnProgramma, btnMegaAree].forEach(btn => {
-      if (btn) {
-        btn.addEventListener("click", function () {
-          if (btnAtlante) btnAtlante.classList.remove("active");
-          if (viewAtlante) viewAtlante.classList.remove("active");
-        });
-      }
-    });
+              const viewProgramma = document.getElementById("viewProgramma");
+              const viewMegaAree = document.getElementById("viewMegaAree");
+              const viewAtlante = document.getElementById("viewAtlante");
 
-    // Supporto apertura diretta via URL (?tab=atlante)
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("tab") === "atlante") {
-      activateAtlanteView();
-    }
-  });
-</script>
-</body>"""
+              function activateAtlanteView() {
+                if (btnProgramma) btnProgramma.classList.remove("active");
+                if (btnMegaAree) btnMegaAree.classList.remove("active");
+                if (btnAtlante) btnAtlante.classList.add("active");
 
-idx = idx.replace("</body>", scripts_injection, 1)
+                if (viewProgramma) viewProgramma.classList.remove("active");
+                if (viewMegaAree) viewMegaAree.classList.remove("active");
+                if (viewAtlante) viewAtlante.classList.add("active");
 
-# Salva il risultato in un nuovo file pronto per il test
-with open("index_unito.html", "w", encoding="utf-8") as f:
-    f.write(idx)
+                window.dispatchEvent(new Event("resize"));
+              }
 
-print("Fatto! Creato 'index_unito.html' con successo.")
+              if (btnAtlante) {
+                btnAtlante.addEventListener("click", activateAtlanteView);
+              }
+
+              [btnProgramma, btnMegaAree].forEach(btn => {
+                if (btn) {
+                  btn.addEventListener("click", function () {
+                    if (btnAtlante) btnAtlante.classList.remove("active");
+                    if (viewAtlante) viewAtlante.classList.remove("active");
+                  });
+                }
+              });
+
+              const params = new URLSearchParams(window.location.search);
+              if (params.get("tab") === "atlante") {
+                activateAtlanteView();
+              }
+            });
+          </script>
+          </body>"""
+
+          idx = idx.replace("</body>", scripts_injection, 1)
+
+          with open("index_unito.html", "w", encoding="utf-8") as f:
+              f.write(idx)
+          print("Generato index_unito.html!")
+          EOF
+
+      - name: Salva modifiche nel repo
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add index_unito.html
+          git commit -m "Generato index_unito.html" || echo "Nessuna modifica"
+          git push
